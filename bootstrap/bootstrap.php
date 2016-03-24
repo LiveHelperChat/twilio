@@ -89,6 +89,102 @@ class erLhcoreClassExtensionTwilio
     }
     
     /**
+     * Sends SMS to user as manual action
+     * */
+    public function sendManualMessage($params)
+    {
+        $paramsSend = array(
+            'AccountSidSend' => $this->settings['AccountSidSend'],
+            'AuthTokenSend' => $this->settings['AuthTokenSend'],
+            'originator' => $this->settings['originator'][0],
+            'text' => $params['msg'],
+            'recipient' => $params['phone_number']
+        );
+
+        $client = new Services_Twilio($paramsSend['AccountSidSend'], $paramsSend['AuthTokenSend']);
+
+        $paramsMMS = array(
+            'To' => $paramsSend['recipient'],
+            'From' => $paramsSend['originator'],
+            'Body' => $paramsSend['text']
+        );
+
+        // Attatch MMS if required
+        $this->addMMSAttatchements($paramsMMS);
+        
+        $client->account->messages->create($paramsMMS);
+
+        if ($params['create_chat'] == true) {
+            
+            $chat = new erLhcoreClassModelChat();
+            $chat->phone = $params['phone_number'];
+            $chat->dep_id = $params['dep_id'];
+            
+            if ($chat->dep_id == 0) {
+                $departments = erLhcoreClassModelDepartament::getList(array(
+                    'limit' => 1,
+                    'filter' => array(
+                        'disabled' => 0
+                    )
+                ));
+                
+                if (! empty($departments)) {
+                    $department = array_shift($departments);
+                    $chat->dep_id = $department->id;
+                    $chat->priority = $department->priority;
+                } else {
+                    throw new Exception('Could not detect default department');
+                }
+            }
+
+
+            $chat->nick = erTranslationClassLhTranslation::getInstance()->getTranslation('twilio/sms', 'SMS') . ' ' . $chat->phone;
+            $chat->time = time();
+            $chat->status = 1;
+            $chat->hash = erLhcoreClassChat::generateHash();
+            $chat->referrer = '';
+            $chat->session_referrer = '';
+            $chat->chat_variables = json_encode(array(
+                'twilio_sms_chat' => true,
+                'twilio_originator' => $paramsSend['originator']
+            ));
+   
+            $chat->saveThis();
+
+            /**
+             * Store new message
+            */
+            $msg = new erLhcoreClassModelmsg();
+            $msg->msg = trim($paramsSend['text']);
+            $msg->chat_id = $chat->id;
+            $msg->user_id = $params['operator_id'];
+            $msg->name_support = $params['name_support'];
+            $msg->time = time();
+            
+            /**
+             * Message
+             */
+            erLhcoreClassChat::getSession()->save($msg);
+            
+            /**
+             * Set appropriate chat attributes
+            */
+            $chat->last_msg_id = $msg->id;
+            $chat->last_user_msg_time = $msg->time;
+            $chat->saveThis();
+            
+            /**
+             * Execute standard callback as chat was started
+            */
+            erLhcoreClassChatEventDispatcher::getInstance()->dispatch('chat.chat_started', array(
+                'chat' => & $chat
+            ));
+            
+            return $chat;
+        }
+    }
+    
+    /**
      * Sends SMS to user
      * 
      * */
