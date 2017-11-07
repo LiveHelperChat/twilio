@@ -65,7 +65,7 @@ $dumpArray['From'] = '+37065272274';
 $dumpArray['MediaUrl0'] = 'https://api.twilio.com/2010-04-01/Accounts/ACd7bc2319cfa2b1b8d45d17f4e4823dd4/Messages/MM729c0bced4770d1e41a42b2443d67226/Media/ME7920446f04994dc102ff663f2a389d4a';
 $dumpArray['ApiVersion'] = '2010-04-01'; */
 
-/* erLhcoreClassLog::write(print_r($_POST,true)); */
+//erLhcoreClassLog::write(print_r($_POST,true));
 
 $dumpArray = $_POST;
 
