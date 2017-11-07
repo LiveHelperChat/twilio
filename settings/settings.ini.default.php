@@ -15,7 +15,11 @@ return array(
     'chattimeout' => 3600*72, // How long chat is considered existing before new chat is created
     
     'ahenviroment' => false, // Is it automated hosting enviroment, not support in twilio at the moment
-    
+
+    'phone_department' => array( // You can have different phone numbers to be assigned to different departments
+        'phonenumber' => '<dep_id>'
+    ),
+
     'debug' => true, // If debug enabled you can find details in default.log
 );
 

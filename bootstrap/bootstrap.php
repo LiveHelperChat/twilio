@@ -476,19 +476,34 @@ class erLhcoreClassExtensionTwilio
             }
             
             if ($chat->dep_id == 0) {
-                $departments = erLhcoreClassModelDepartament::getList(array(
-                    'limit' => 1,
-                    'filter' => array(
-                        'disabled' => 0
-                    )
-                ));
-                
-                if (! empty($departments)) {
-                    $department = array_shift($departments);
-                    $chat->dep_id = $department->id;
-                    $chat->priority = $department->priority;
+
+                if (isset($this->settings['phone_department'][$params['To']])) {
+
+                    $depId = $this->settings['phone_department'][$params['To']];
+                    $department = erLhcoreClassModelDepartament::fetch($depId);
+
+                    if ($department instanceof erLhcoreClassModelDepartament) {
+                        $chat->dep_id = $department->id;
+                        $chat->priority = $department->priority;
+                    } else {
+                        throw new Exception('Could not find department by phone number - ' . $depId);
+                    }
+
                 } else {
-                    throw new Exception('Could not detect default department');
+                    $departments = erLhcoreClassModelDepartament::getList(array(
+                        'limit' => 1,
+                        'filter' => array(
+                            'disabled' => 0
+                        )
+                    ));
+
+                    if (! empty($departments)) {
+                        $department = array_shift($departments);
+                        $chat->dep_id = $department->id;
+                        $chat->priority = $department->priority;
+                    } else {
+                        throw new Exception('Could not detect default department');
+                    }
                 }
             }
                     
