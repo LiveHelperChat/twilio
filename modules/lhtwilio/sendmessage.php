@@ -7,6 +7,7 @@ $input->phone_number = '';
 $input->message = '';
 $input->create_chat = true;
 $input->dep_id = 0;
+$input->twilio_id = 0;
 
 /**
  * Has post data
@@ -17,7 +18,8 @@ if (ezcInputForm::hasPostData()) {
         'TwilioPhoneNumber' => new ezcInputFormDefinitionElement(ezcInputFormDefinitionElement::OPTIONAL, 'unsafe_raw', null),
         'TwilioMessage' => new ezcInputFormDefinitionElement(ezcInputFormDefinitionElement::OPTIONAL, 'unsafe_raw', null),
         'TwilioCreateChat' => new ezcInputFormDefinitionElement(ezcInputFormDefinitionElement::OPTIONAL, 'boolean', null),
-        'TwilioDepartment' => new ezcInputFormDefinitionElement(ezcInputFormDefinitionElement::OPTIONAL, 'int', null)
+        'TwilioDepartment' => new ezcInputFormDefinitionElement(ezcInputFormDefinitionElement::OPTIONAL, 'int', null),
+        'TwilioId' => new ezcInputFormDefinitionElement(ezcInputFormDefinitionElement::OPTIONAL, 'int', null)
     );
     
     $Errors = array();
@@ -44,6 +46,12 @@ if (ezcInputForm::hasPostData()) {
         $input->create_chat = false;
     }
     
+    if ($form->hasValidData('TwilioId')) {
+        $input->twilio_id = $form->TwilioId;
+    } else {
+        $Errors[] = erTranslationClassLhTranslation::getInstance()->getTranslation('twilio/sendmessage','Please choose twilio phone!');
+    }
+    
     // Set department
     if ($form->hasValidData('TwilioDepartment')) {
         $input->dep_id = $form->TwilioDepartment;
@@ -66,6 +74,7 @@ if (ezcInputForm::hasPostData()) {
                 'dep_id' => $input->dep_id,
                 'operator_id' => $userData->id,
                 'name_support' => $userData->name_support,
+                'twilio_id' => $input->twilio_id,
             ));
 
             $tpl->set('updated',true);
