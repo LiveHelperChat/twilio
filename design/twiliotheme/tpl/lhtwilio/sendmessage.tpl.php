@@ -36,6 +36,18 @@
     </div> 
     
     <div class="form-group">
+	   <label><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('chat/lists/search_panel','Twilio');?></label>
+	   <?php echo erLhcoreClassRenderHelper::renderCombobox( array (
+                'input_name'     => 'TwilioId',
+				'optional_field' => erTranslationClassLhTranslation::getInstance()->getTranslation('chat/lists/search_panel','Choose phone'),
+                'selected_id'    => $input->twilio_id,	
+	            'css_class'      => 'form-control',	
+	            'display_name'       => 'phone',
+                'list_function'  => 'erLhcoreClassModelTwilioPhone::getList'
+       )); ?> 
+    </div>
+    
+    <div class="form-group">
 		<label><input type="checkbox" name="TwilioCreateChat" value="on" <?php ($input->create_chat == true) ? print 'checked="checked"' : print '';?>>&nbsp;<?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('sugarcrm/module','Create chat')?></label>
 	</div>
     

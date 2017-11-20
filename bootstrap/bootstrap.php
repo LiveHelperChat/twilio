@@ -9,8 +9,12 @@ class erLhcoreClassExtensionTwilio
 
     private $ahinstance = null;
 
+    private static $persistentSession;
+    
     public function run()
     {
+        $this->registerAutoload ();
+        
         $this->settings = include ('extension/twilio/settings/settings.ini.php');
         
         require 'extension/twilio/vendor/twilio-php-master/Services/Twilio.php';
@@ -31,7 +35,33 @@ class erLhcoreClassExtensionTwilio
             'sendSMSUser'
         ));        
     }
-
+    
+    public function registerAutoload() {
+        spl_autoload_register ( array (
+            $this,
+            'autoload'
+        ), true, false );
+    }
+    
+    public function autoload($className) {
+        $classesArray = array (
+            'erLhcoreClassModelTwilioChat'  => 'extension/twilio/classes/erlhcoreclassmodeltwiliochat.php',
+            'erLhcoreClassModelTwilioPhone'  => 'extension/twilio/classes/erlhcoreclassmodeltwiliophone.php',
+            'erLhcoreClassTwilioValidator' => 'extension/twilio/classes/erlhcoreclasstwiliovalidator.php'
+        );
+        
+        if (key_exists ( $className, $classesArray )) {
+            include_once $classesArray [$className];
+        }
+    }
+    
+    public static function getSession() {
+        if (! isset ( self::$persistentSession )) {
+            self::$persistentSession = new ezcPersistentSession ( ezcDbInstance::get (), new ezcPersistentCodeManager ( './extension/twilio/pos' ) );
+        }
+        return self::$persistentSession;
+    }
+    
     /**
      * Messages files
      * */
@@ -93,10 +123,12 @@ class erLhcoreClassExtensionTwilio
      * */
     public function sendManualMessage($params)
     {
+        $tPhone = erLhcoreClassModelTwilioPhone::fetch($params['twilio_id']);
+        
         $paramsSend = array(
-            'AccountSidSend' => $this->settings['AccountSidSend'],
-            'AuthTokenSend' => $this->settings['AuthTokenSend'],
-            'originator' => $this->settings['originator'][0],
+            'AccountSidSend' => $tPhone->account_sid,
+            'AuthTokenSend' => $tPhone->auth_token,
+            'originator' => $tPhone->originator,
             'text' => $params['msg'],
             'recipient' => $params['phone_number']
         );
@@ -137,7 +169,6 @@ class erLhcoreClassExtensionTwilio
                 }
             }
 
-
             $chat->nick = erTranslationClassLhTranslation::getInstance()->getTranslation('twilio/sms', 'SMS') . ' ' . $chat->phone;
             $chat->time = time();
             $chat->status = 1;
@@ -151,6 +182,13 @@ class erLhcoreClassExtensionTwilio
    
             $chat->saveThis();
 
+            $tChat = new erLhcoreClassModelTwilioChat();
+            $tChat->phone = $paramsSend['recipient'];
+            $tChat->utime = time();
+            $tChat->ctime = time();
+            $tChat->chat_id = $chat->id;
+            $tChat->saveThis();
+            
             /**
              * Store new message
             */
@@ -212,10 +250,12 @@ class erLhcoreClassExtensionTwilio
                     throw new Exception(erTranslationClassLhTranslation::getInstance()->getTranslation('twilio/sms', 'SMS could not be send because you have reached your SMS hard limit!'));
                 }
 
+                $twilioPhone = erLhcoreClassModelTwilioPhone::fetch($chatVariables['twilio_phone_id']);
+                
                 $paramsSend = array(
-                    'AccountSidSend' => $this->settings['AccountSidSend'],
-                    'AuthTokenSend' => $this->settings['AuthTokenSend'],
-                    'originator' => $this->settings['originator'][0],
+                    'AccountSidSend' => $twilioPhone->account_sid,
+                    'AuthTokenSend' => $twilioPhone->auth_token,
+                    'originator' => $twilioPhone->phone,
                     'text' => $params['msg']->msg,
                     'recipient' => $params['chat']->phone
                 );
@@ -246,6 +286,8 @@ class erLhcoreClassExtensionTwilio
                 
                 // Attatch MMS if required
                 $this->addMMSAttatchements($paramsMMS);
+                
+                erLhcoreClassLog::write(print_r($paramsSend,true));
                 
                 $client->account->messages->create($paramsMMS);
                                 
@@ -378,28 +420,27 @@ class erLhcoreClassExtensionTwilio
             throw new Exception('Module disabled for user');
         }
         
-        if (($this->settings['ahenviroment'] == false && !in_array($params['To'], $this->settings['recipient'])) || ($this->settings['ahenviroment'] == true && ! key_exists($params['To'], $this->ahinstance->phone_number_departments))) {
+        $twilioPhone = erLhcoreClassModelTwilioPhone::findOne(array('filter' => array('phone' => $params['To'])));
+        
+        if (($this->settings['ahenviroment'] == false && $twilioPhone === false) || ($this->settings['ahenviroment'] == true && ! key_exists($params['To'], $this->ahinstance->phone_number_departments))) {
             throw new Exception('Invalid recipient');
         }
         
-        if (($this->settings['ahenviroment'] == false && $this->settings['AccountSid'] != $params['AccountSid']) || ($this->settings['ahenviroment'] == true && $this->ahinstance->getPhoneAttribute('AccountSid') != $params['AccountSid'])) {
+        if (($this->settings['ahenviroment'] == false && $twilioPhone->account_sid != $params['AccountSid']) || ($this->settings['ahenviroment'] == true && $this->ahinstance->getPhoneAttribute('AccountSid') != $params['AccountSid'])) {
             throw new Exception('Invalid AccountSid');
         }
         
-        // @todo add some index on phone and last_user_msg_time if not set
-        $chats = erLhcoreClassChat::getList(array(
-            'limit' => 1,
+        $tChat = erLhcoreClassModelTwilioChat::findOne(array(
             'filtergt' => array(
-                'last_user_msg_time' => (time() - $this->settings['chattimeout'])
+                'utime' => (time() - $twilioPhone->chat_timeout)
             ),
             'filter' => array(
                 'phone' => $params['From']
-            )
+            )            
         ));
         
-        if (! empty($chats)) {
-            $chat = array_shift($chats);
-            
+        if ($tChat !== false && ($chat = $tChat->chat) !== false ) {
+           
             $msg = new erLhcoreClassModelmsg();
             $msg->msg = trim($params['Body']);
             $msg->chat_id = $chat->id;
@@ -430,6 +471,9 @@ class erLhcoreClassExtensionTwilio
             }
             
             $stmt->execute();
+            
+            $tChat->utime = time();
+            $tChat->saveThis();
             
             $db->commit();
             
@@ -477,9 +521,9 @@ class erLhcoreClassExtensionTwilio
             
             if ($chat->dep_id == 0) {
 
-                if (isset($this->settings['phone_department'][$params['To']])) {
+                if ($this->settings['ahenviroment'] == false && $twilioPhone->dep_id > 0) {
 
-                    $depId = $this->settings['phone_department'][$params['To']];
+                    $depId = $twilioPhone->dep_id;
                     $department = erLhcoreClassModelDepartament::fetch($depId);
 
                     if ($department instanceof erLhcoreClassModelDepartament) {
@@ -515,6 +559,7 @@ class erLhcoreClassExtensionTwilio
             $chat->session_referrer = '';
             $chat->chat_variables = json_encode(array(
                 'twilio_sms_chat' => true,
+                'twilio_phone_id' => $twilioPhone->id,
                 'twilio_originator' => $params['To']
             ));
             
@@ -550,6 +595,16 @@ class erLhcoreClassExtensionTwilio
             $chat->last_msg_id = $msg->id;
             $chat->last_user_msg_time = $msg->time;
             $chat->saveThis();
+
+            /**
+             * Save twilio chat
+             */
+            $tChat = new erLhcoreClassModelTwilioChat();
+            $tChat->phone = $params['From'];
+            $tChat->chat_id = $chat->id;
+            $tChat->utime = time();
+            $tChat->ctime = time();
+            $tChat->saveThis();
             
             /**
              * Execute standard callback as chat was started
