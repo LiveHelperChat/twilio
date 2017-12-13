@@ -124,12 +124,21 @@ class erLhcoreClassExtensionTwilio
     public function sendManualMessage($params)
     {
         $tPhone = erLhcoreClassModelTwilioPhone::fetch($params['twilio_id']);
-        
+
+        // Prepend Signature if Telegram extension is used
+        $signatureText = '';
+
+        $statusSignature = erLhcoreClassChatEventDispatcher::getInstance()->dispatch('telegram.get_signature',array('user_id' => erLhcoreClassUser::instance()->getUserID()));
+
+        if ($statusSignature !== false) {
+            $signatureText = $statusSignature['signature'];
+        }
+
         $paramsSend = array(
             'AccountSidSend' => $tPhone->account_sid,
             'AuthTokenSend' => $tPhone->auth_token,
             'originator' => $tPhone->originator,
-            'text' => $params['msg'],
+            'text' => $params['msg'] . $signatureText,
             'recipient' => $params['phone_number']
         );
 
@@ -251,12 +260,21 @@ class erLhcoreClassExtensionTwilio
                 }
 
                 $twilioPhone = erLhcoreClassModelTwilioPhone::fetch($chatVariables['twilio_phone_id']);
-                
+
+                // Prepend Signature if Telegram extension is used
+                $signatureText = '';
+
+                $statusSignature = erLhcoreClassChatEventDispatcher::getInstance()->dispatch('telegram.get_signature',array('user_id' => erLhcoreClassUser::instance()->getUserID()));
+
+                if ($statusSignature !== false) {
+                    $signatureText = $statusSignature['signature'];
+                }
+
                 $paramsSend = array(
                     'AccountSidSend' => $twilioPhone->account_sid,
                     'AuthTokenSend' => $twilioPhone->auth_token,
                     'originator' => $twilioPhone->phone,
-                    'text' => $params['msg']->msg,
+                    'text' => $params['msg']->msg . $signatureText,
                     'recipient' => $params['chat']->phone
                 );
 
@@ -286,9 +304,7 @@ class erLhcoreClassExtensionTwilio
                 
                 // Attatch MMS if required
                 $this->addMMSAttatchements($paramsMMS);
-                
-                erLhcoreClassLog::write(print_r($paramsSend,true));
-                
+
                 $client->account->messages->create($paramsMMS);
                                 
                 if (! isset($chatVariables['twilio_sms_chat_send'])) {
