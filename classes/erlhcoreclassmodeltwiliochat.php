@@ -19,7 +19,8 @@ class erLhcoreClassModelTwilioChat
             'phone' => $this->phone,
             'chat_id' => $this->chat_id,
             'ctime' => $this->ctime,
-            'utime' => $this->utime
+            'utime' => $this->utime,
+            'tphone_id' => $this->tphone_id
         );
     }
 
@@ -59,6 +60,8 @@ class erLhcoreClassModelTwilioChat
     public $phone = null;
     
     public $chat_id = null;
+    
+    public $tphone_id = null;
 
     public $ctime = null;
     

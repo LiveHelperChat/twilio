@@ -451,7 +451,8 @@ class erLhcoreClassExtensionTwilio
                 'utime' => (time() - $twilioPhone->chat_timeout)
             ),
             'filter' => array(
-                'phone' => $params['From']
+                'phone' => $params['From'],
+                'tphone_id' => $twilioPhone->id
             )            
         ));
         
@@ -618,6 +619,7 @@ class erLhcoreClassExtensionTwilio
             $tChat = new erLhcoreClassModelTwilioChat();
             $tChat->phone = $params['From'];
             $tChat->chat_id = $chat->id;
+            $tChat->tphone_id = $twilioPhone->id;
             $tChat->utime = time();
             $tChat->ctime = time();
             $tChat->saveThis();
