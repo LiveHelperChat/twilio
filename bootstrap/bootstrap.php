@@ -196,6 +196,7 @@ class erLhcoreClassExtensionTwilio
             $tChat->utime = time();
             $tChat->ctime = time();
             $tChat->chat_id = $chat->id;
+            $tChat->tphone_id = $tPhone->id;
             $tChat->saveThis();
             
             /**
