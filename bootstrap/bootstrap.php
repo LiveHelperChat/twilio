@@ -381,7 +381,7 @@ class erLhcoreClassExtensionTwilio
      * */
     public function processMMSAttatchements($chat, $params)
     {
-        $response = false;
+        $response = '';
 
         if ($params['NumMedia'] > 0) {
             for ($i = 0; $i < $params['NumMedia']; $i++) {
@@ -424,7 +424,7 @@ class erLhcoreClassExtensionTwilio
 
                         erLhcoreClassChatEventDispatcher::getInstance()->dispatch('file.uploadfile.file_store', array('chat_file' => $fileUpload));
 
-                        $response = '[file='.$fileUpload->id.'_'.md5($fileUpload->name.'_'.$chat->id).']';
+                        $response .= '[file='.$fileUpload->id.'_'.md5($fileUpload->name.'_'.$chat->id).']';
                     }
                 }
             }
@@ -488,7 +488,7 @@ class erLhcoreClassExtensionTwilio
 
             $responseText = $this->processMMSAttatchements($chat, $params);
 
-            if ($responseText !== false) {
+            if ($responseText !== '') {
                 $msg->msg .= "\n".$responseText;
             }
 
@@ -640,7 +640,7 @@ class erLhcoreClassExtensionTwilio
              * */
             $responseText = $this->processMMSAttatchements($chat, $params);
 
-            if ($responseText !== false) {
+            if ($responseText !== '') {
                 $msg->msg .= "\n".$responseText;
             }
 
