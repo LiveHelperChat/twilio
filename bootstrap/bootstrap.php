@@ -447,6 +447,10 @@ class erLhcoreClassExtensionTwilio
             throw new Exception('Module disabled for user');
         }
 
+        if (!isset($params['To'])) {
+            throw new Exception('Invalid recipient');
+        }
+
         $twilioPhone = erLhcoreClassModelTwilioPhone::findOne(array('filter' => array('phone' => $params['To'])));
 
         if (($this->settings['ahenviroment'] == false && $twilioPhone === false) || ($this->settings['ahenviroment'] == true && ! key_exists($params['To'], $this->ahinstance->phone_number_departments))) {
