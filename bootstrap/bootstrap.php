@@ -139,12 +139,18 @@ class erLhcoreClassExtensionTwilio
             $signatureText = $statusSignature['signature'];
         }
 
+        $recipientPhone = str_replace($tPhone->base_phone,'',$params['phone_number']);
+
+        if (strpos($recipientPhone,'+') === false) {
+            $recipientPhone = $tPhone->base_phone . $recipientPhone;
+        }
+
         $paramsSend = array(
             'AccountSidSend' => $tPhone->account_sid,
             'AuthTokenSend' => $tPhone->auth_token,
             'originator' => $tPhone->base_phone . $tPhone->originator,
             'text' => $params['msg'] . $signatureText,
-            'recipient' => $tPhone->base_phone . str_replace($tPhone->base_phone,'',$params['phone_number'])
+            'recipient' => $recipientPhone
         );
 
         $client = new Services_Twilio($paramsSend['AccountSidSend'], $paramsSend['AuthTokenSend']);
@@ -281,12 +287,18 @@ class erLhcoreClassExtensionTwilio
                     $signatureText = $statusSignature['signature'];
                 }
 
+                $recipientPhone = str_replace($twilioPhone->base_phone,'',$params['chat']->phone);
+
+                if (strpos($recipientPhone,'+') === false) {
+                    $recipientPhone = $twilioPhone->base_phone . $recipientPhone;
+                }
+
                 $paramsSend = array(
                     'AccountSidSend' => $twilioPhone->account_sid,
                     'AuthTokenSend' => $twilioPhone->auth_token,
                     'originator' => $twilioPhone->base_phone . $twilioPhone->phone,
                     'text' => $params['msg']->msg . $signatureText,
-                    'recipient' => $twilioPhone->base_phone . str_replace($twilioPhone->base_phone,'',$params['chat']->phone)
+                    'recipient' => $recipientPhone
                 );
 
                 if (isset($chatVariables['twilio_originator']) && $chatVariables['twilio_originator'] != '') {
