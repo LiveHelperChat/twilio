@@ -17,6 +17,7 @@ class erLhcoreClassModelTwilioPhone
         return array(
             'id' => $this->id,
             'phone' => $this->phone,
+            'base_phone' => $this->base_phone,
             'account_sid' => $this->account_sid,
             'auth_token' => $this->auth_token,
             'dep_id' => $this->dep_id,
@@ -65,6 +66,8 @@ class erLhcoreClassModelTwilioPhone
     public $auth_token = null;
     
     public $dep_id = null;
+
+    public $base_phone = '';
 
     public $chat_timeout = 3600*72;   
     

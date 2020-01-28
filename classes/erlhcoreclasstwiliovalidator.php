@@ -8,6 +8,9 @@ class erLhcoreClassTwilioValidator
                 'phone' => new ezcInputFormDefinitionElement(
                     ezcInputFormDefinitionElement::OPTIONAL, 'unsafe_raw'
                 ),
+                'base_phone' => new ezcInputFormDefinitionElement(
+                    ezcInputFormDefinitionElement::OPTIONAL, 'unsafe_raw'
+                ),
                 'account_sid' => new ezcInputFormDefinitionElement(
                     ezcInputFormDefinitionElement::OPTIONAL, 'unsafe_raw'
                 ),
@@ -33,6 +36,13 @@ class erLhcoreClassTwilioValidator
                 $item->phone = $form->phone;
             } else {
                 $Errors[] =  erTranslationClassLhTranslation::getInstance()->getTranslation('xmppservice/operatorvalidator','Please enter phone number!');
+            }
+
+            if ( $form->hasValidData( 'base_phone' ) && $form->base_phone != '')
+            {
+                $item->base_phone = $form->base_phone;
+            } else {
+                $item->base_phone = '';
             }
             
             if ( $form->hasValidData( 'account_sid' ) && $form->account_sid != '')

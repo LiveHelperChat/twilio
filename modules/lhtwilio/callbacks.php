@@ -1,7 +1,8 @@
 <?php
 
 //erLhcoreClassLog::write(print_r($_POST,true));
-/*$dumpArray['ToCountry'] = 'US';
+
+$dumpArray['ToCountry'] = 'US';
 $dumpArray['ToState'] = 'AZ';
 $dumpArray['SmsMessageSid'] = 'MM729c0bced4770d1e41a42b2443d67226';
 $dumpArray['NumMedia'] = '1';
@@ -18,10 +19,10 @@ $dumpArray['ToZip'] = null;
 $dumpArray['NumSegments'] = 1;
 $dumpArray['MessageSid'] = 'SM0b9acb7ecd7a1ceed4384b9f08c84679';
 $dumpArray['AccountSid'] = 'ACd7bc2319cfa2b1b8d45d17f4e4823dd4';
-$dumpArray['From'] = '+14803607305';
-$dumpArray['ApiVersion'] = '2010-04-01';*/
+$dumpArray['From'] = '+14803607307';
+$dumpArray['ApiVersion'] = '2010-04-01';
 
-$dumpArray = $_POST;
+//$dumpArray = $_POST;
 
 try {
     $dynmarkSMS = erLhcoreClassModule::getExtensionInstance('erLhcoreClassExtensionTwilio');

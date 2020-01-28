@@ -84,6 +84,14 @@
                 "extra": ""
             },
             {
+                "field": "base_phone",
+                "type": "varchar(15)",
+                "null": "NO",
+                "key": "",
+                "default": null,
+                "extra": ""
+            },
+            {
                 "field": "originator",
                 "type": "varchar(15)",
                 "null": "NO",

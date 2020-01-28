@@ -142,9 +142,9 @@ class erLhcoreClassExtensionTwilio
         $paramsSend = array(
             'AccountSidSend' => $tPhone->account_sid,
             'AuthTokenSend' => $tPhone->auth_token,
-            'originator' => $tPhone->originator,
+            'originator' => $tPhone->base_phone . $tPhone->originator,
             'text' => $params['msg'] . $signatureText,
-            'recipient' => $params['phone_number']
+            'recipient' => $tPhone->base_phone . str_replace($tPhone->base_phone,'',$params['phone_number'])
         );
 
         $client = new Services_Twilio($paramsSend['AccountSidSend'], $paramsSend['AuthTokenSend']);
@@ -163,7 +163,7 @@ class erLhcoreClassExtensionTwilio
         if ($params['create_chat'] == true) {
 
             $chat = new erLhcoreClassModelChat();
-            $chat->phone = $params['phone_number'];
+            $chat->phone = str_replace($tPhone->base_phone,'',$params['phone_number']);
             $chat->dep_id = $params['dep_id'];
 
             if ($chat->dep_id == 0) {
@@ -191,14 +191,14 @@ class erLhcoreClassExtensionTwilio
             $chat->session_referrer = '';
             $chat->chat_variables = json_encode(array(
                 'twilio_sms_chat' => true,
-                'twilio_originator' => $paramsSend['originator'],
+                'twilio_originator' => $tPhone->originator,
                 'twilio_phone_id' => $tPhone->id
             ));
 
             $chat->saveThis();
 
             $tChat = new erLhcoreClassModelTwilioChat();
-            $tChat->phone = $paramsSend['recipient'];
+            $tChat->phone = str_replace($tPhone->base_phone,'',$params['phone_number']);
             $tChat->utime = time();
             $tChat->ctime = time();
             $tChat->chat_id = $chat->id;
@@ -284,19 +284,19 @@ class erLhcoreClassExtensionTwilio
                 $paramsSend = array(
                     'AccountSidSend' => $twilioPhone->account_sid,
                     'AuthTokenSend' => $twilioPhone->auth_token,
-                    'originator' => $twilioPhone->phone,
+                    'originator' => $twilioPhone->base_phone . $twilioPhone->phone,
                     'text' => $params['msg']->msg . $signatureText,
-                    'recipient' => $params['chat']->phone
+                    'recipient' => $twilioPhone->base_phone . $params['chat']->phone
                 );
 
                 if (isset($chatVariables['twilio_originator']) && $chatVariables['twilio_originator'] != '') {
-                    $paramsSend['originator'] = $chatVariables['twilio_originator'];
+                    $paramsSend['originator'] = $twilioPhone->base_phone . $chatVariables['twilio_originator'];
                 }
 
                 if ($this->settings['ahenviroment'] == true) {
 
                     if (isset($chatVariables['twilio_originator'])) {
-                        $paramsSend['originator'] = $chatVariables['twilio_originator']; // Use same sender as recipient
+                        $paramsSend['originator'] = $twilioPhone->base_phone . $chatVariables['twilio_originator']; // Use same sender as recipient
                     } else {
                         $paramsSend['originator'] = $this->ahinstance->phone_number_first;
                     }
@@ -313,7 +313,7 @@ class erLhcoreClassExtensionTwilio
                     'Body' => $paramsSend['text']
                 );
 
-                // Attatch MMS if required
+                // Attach MMS if required
                 $this->addMMSAttatchements($paramsMMS);
 
                 $client->account->messages->create($paramsMMS);
@@ -433,6 +433,8 @@ class erLhcoreClassExtensionTwilio
         return $response;
     }
 
+
+
     /*
      *
      * @desc processes sms callback and stores a new chat or appends a message to existing chat
@@ -452,6 +454,19 @@ class erLhcoreClassExtensionTwilio
         }
 
         $twilioPhone = erLhcoreClassModelTwilioPhone::findOne(array('filter' => array('phone' => $params['To'])));
+
+        if ($twilioPhone === false) {
+
+            $db = ezcDbInstance::get();
+
+            $twilioPhone = erLhcoreClassModelTwilioPhone::findOne(array('customfilter' => array('concat(`base_phone`,`phone`) = ' . $db->quote($params['To']))));
+
+            // we replace from all passed variables + as in Twilio this number was without+ in front
+            if ($twilioPhone !== false) {
+                $params['To'] = str_replace($twilioPhone->base_phone,'', $params['To']);
+                $params['From'] = str_replace($twilioPhone->base_phone,'', $params['From']);
+            }
+        }
 
         if (($this->settings['ahenviroment'] == false && $twilioPhone === false) || ($this->settings['ahenviroment'] == true && ! key_exists($params['To'], $this->ahinstance->phone_number_departments))) {
             throw new Exception('Invalid recipient');
@@ -497,6 +512,46 @@ class erLhcoreClassExtensionTwilio
             }
 
             erLhcoreClassChat::getSession()->save($msg);
+
+            // Create auto responder if there is none
+            if ($chat->auto_responder === false) {
+                $responder = erLhAbstractModelAutoResponder::processAutoResponder($chat);
+                if ($responder instanceof erLhAbstractModelAutoResponder) {
+                    $responderChat = new erLhAbstractModelAutoResponderChat();
+                    $responderChat->auto_responder_id = $responder->id;
+                    $responderChat->chat_id = $chat->id;
+                    $responderChat->wait_timeout_send = 1 - $responder->repeat_number;
+                    $responderChat->saveThis();
+
+                    $chat->auto_responder_id = $responderChat->id;
+                    $chat->auto_responder = $responderChat;
+                }
+            }
+
+            // Auto responder if department is offline
+            if ($chat->auto_responder !== false) {
+
+                $responder = $chat->auto_responder->auto_responder;
+
+                if (is_object($responder) && $responder->offline_message != '' && !erLhcoreClassChat::isOnline($chat->dep_id, false, array(
+                        'online_timeout' => (int) erLhcoreClassModelChatConfig::fetch('sync_sound_settings')->data['online_timeout'],
+                        'ignore_user_status' => false
+                    ))) {
+                    $msgResponder = new erLhcoreClassModelmsg();
+                    $msgResponder->msg = trim($responder->offline_message);
+                    $msgResponder->chat_id = $chat->id;
+                    $msgResponder->name_support = $responder->operator != '' ? $responder->operator : erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchat','Live Support');
+                    $msgResponder->user_id = -2;
+                    $msgResponder->time = time() + 5;
+                    erLhcoreClassChat::getSession()->save($msgResponder);
+
+                    if ($chat->last_msg_id < $msgResponder->id) {
+                        $chat->last_msg_id = $msgResponder->id;
+                    }
+
+                    $this->sendSMSUser(array('chat' => $chat, 'msg' => $msgResponder));
+                }
+            }
 
             // Update related chat attributes
             $db = ezcDbInstance::get();
@@ -589,6 +644,7 @@ class erLhcoreClassExtensionTwilio
                     if ($department instanceof erLhcoreClassModelDepartament) {
                         $chat->dep_id = $department->id;
                         $chat->priority = $department->priority;
+
                     } else {
                         throw new Exception('Could not find department by phone number - ' . $depId);
                     }
@@ -655,6 +711,40 @@ class erLhcoreClassExtensionTwilio
              */
             $chat->last_msg_id = $msg->id;
             $chat->last_user_msg_time = $msg->time;
+
+            // Process auto responder
+            $responder = erLhAbstractModelAutoResponder::processAutoResponder($chat);
+
+            if ($responder instanceof erLhAbstractModelAutoResponder) {
+                $responderChat = new erLhAbstractModelAutoResponderChat();
+                $responderChat->auto_responder_id = $responder->id;
+                $responderChat->chat_id = $chat->id;
+                $responderChat->wait_timeout_send = 1 - $responder->repeat_number;
+                $responderChat->saveThis();
+
+                $chat->auto_responder_id = $responderChat->id;
+
+                if ($responder->offline_message != '' && !erLhcoreClassChat::isOnline($chat->dep_id, false, array(
+                        'online_timeout' => (int) erLhcoreClassModelChatConfig::fetch('sync_sound_settings')->data['online_timeout'],
+                        'ignore_user_status' => false
+                    ))) {
+                    $msg = new erLhcoreClassModelmsg();
+                    $msg->msg = trim($responder->offline_message);
+                    $msg->chat_id = $chat->id;
+                    $msg->name_support = $responder->operator != '' ? $responder->operator : erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchat','Live Support');
+                    $msg->user_id = -2;
+                    $msg->time = time() + 5;
+                    erLhcoreClassChat::getSession()->save($msg);
+
+                    $messageResponder = $msg;
+
+                    if ($chat->last_msg_id < $msg->id) {
+                        $chat->last_msg_id = $msg->id;
+                    }
+                }
+            }
+
+            // Save chat
             $chat->saveThis();
 
             /**
@@ -667,6 +757,11 @@ class erLhcoreClassExtensionTwilio
             $tChat->utime = time();
             $tChat->ctime = time();
             $tChat->saveThis();
+
+            // Auto responder has something to send to visitor.
+            if (isset($messageResponder)) {
+                $this->sendSMSUser(array('chat' => $chat, 'msg' => $messageResponder));
+            }
 
             /**
              * Execute standard callback as chat was started

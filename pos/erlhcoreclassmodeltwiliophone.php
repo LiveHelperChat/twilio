@@ -14,6 +14,11 @@ $def->properties['phone']->columnName   = 'phone';
 $def->properties['phone']->propertyName = 'phone';
 $def->properties['phone']->propertyType = ezcPersistentObjectProperty::PHP_TYPE_STRING;
 
+$def->properties['base_phone'] = new ezcPersistentObjectProperty();
+$def->properties['base_phone']->columnName   = 'base_phone';
+$def->properties['base_phone']->propertyName = 'base_phone';
+$def->properties['base_phone']->propertyType = ezcPersistentObjectProperty::PHP_TYPE_STRING;
+
 $def->properties['account_sid'] = new ezcPersistentObjectProperty();
 $def->properties['account_sid']->columnName   = 'account_sid';
 $def->properties['account_sid']->propertyName = 'account_sid';
