@@ -286,17 +286,17 @@ class erLhcoreClassExtensionTwilio
                     'AuthTokenSend' => $twilioPhone->auth_token,
                     'originator' => $twilioPhone->base_phone . $twilioPhone->phone,
                     'text' => $params['msg']->msg . $signatureText,
-                    'recipient' => $twilioPhone->base_phone . $params['chat']->phone
+                    'recipient' => $twilioPhone->base_phone . str_replace($twilioPhone->base_phone,'',$params['chat']->phone)
                 );
 
                 if (isset($chatVariables['twilio_originator']) && $chatVariables['twilio_originator'] != '') {
-                    $paramsSend['originator'] = $twilioPhone->base_phone . $chatVariables['twilio_originator'];
+                    $paramsSend['originator'] = $twilioPhone->base_phone . str_replace($twilioPhone->base_phone,'',$chatVariables['twilio_originator']);
                 }
 
                 if ($this->settings['ahenviroment'] == true) {
 
                     if (isset($chatVariables['twilio_originator'])) {
-                        $paramsSend['originator'] = $twilioPhone->base_phone . $chatVariables['twilio_originator']; // Use same sender as recipient
+                        $paramsSend['originator'] = $twilioPhone->base_phone . str_replace($twilioPhone->base_phone,'',$chatVariables['twilio_originator']); // Use same sender as recipient
                     } else {
                         $paramsSend['originator'] = $this->ahinstance->phone_number_first;
                     }
