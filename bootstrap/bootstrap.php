@@ -39,6 +39,147 @@ class erLhcoreClassExtensionTwilio
             $this,
             'sendSMSUser'
         ));
+
+        $dispatcher->listen('restapi.swagger', array(
+            $this,
+            'swagger'
+        ));
+
+        $dispatcher->listen('restapi.chats_filter', array(
+            $this,
+            'chatsFilter'
+        ));
+    }
+
+    public function chatsFilter($params) {
+        if (isset($_GET['twilio_sms_chat']) && $_GET['twilio_sms_chat'] == 'true') {
+            $params['filter']['innerjoin']['lhc_twilio_chat'] = array('`lh_chat`.`id`','`lhc_twilio_chat`.`chat_id`');
+        }
+    }
+
+    public function swagger($params) {
+
+     $params['chats_parameters'] .= '{
+            "name": "twilio_sms_chat",
+            "description": "Include only twilio sms chats",
+            "required": false,
+            "type": "boolean",
+            "default": false,
+            "in": "query"
+          },';
+
+     $params['append_paths'] .= ',"/restapi/twilio_create_sms": {
+      "post": {
+        "tags": [
+          "twilio"
+        ],
+        "summary": "Send SMS to visitor",
+        "description": "",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+            {
+              "in": "body",
+              "name": "body",
+              "description": "Bot object that needs to be added to the lhc",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/TwilioSMS"
+              }
+            }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sends SMS To visitor",
+            "schema": {
+            }
+          },
+          "400": {
+            "description": "Error",
+            "schema": {
+            }
+          }
+        },
+        "security": [
+          {
+            "login": []
+          }
+        ]
+      }
+    },"/restapi/twilio_phones": {
+      "get": {
+        "tags": [
+          "twilio"
+        ],
+        "summary": "Returns list of registered twilio phones",
+        "description": "",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [            
+        ],
+        "responses": {
+          "200": {
+            "description": "List of registered twilio phones returned",
+            "schema": {
+            }
+          },
+          "400": {
+            "description": "Error",
+            "schema": {
+            }
+          }
+        },
+        "security": [
+          {
+            "login": []
+          }
+        ]
+      }
+    }';
+
+        $params['append_definitions'] .= '"TwilioSMS": {
+      "type": "object",
+      "properties": {
+        "msg": {
+          "type": "string",
+          "default": "message to visitor",
+          "required": true,
+          "description": "Message"
+        },
+        "phone_number": {
+          "type": "string",
+          "default": "",
+          "required": true,
+          "description": "Phone number"
+        },
+        "create_chat": {
+          "type": "boolean",
+          "required": false,
+          "description": "Create chat then message is send",
+          "example": null
+        },
+        "dep_id": {
+          "type": "string",
+          "required": false,
+          "description": "Department ID",
+          "example": null
+        },
+        "twilio_id": {
+          "type": "string",
+          "required": true,
+          "description": "Twilio phone ID"
+        }
+      },
+      "example" : {
+        "msg" : "Message to visitor",
+        "phone_number" : "+37065272xxx",
+        "create_chat" : true,
+        "twilio_id" : 1
+      }
+    },';
+        //'append_definitions' => & $append_definitions, 'append_paths'
     }
 
     public function registerAutoload() {
@@ -170,22 +311,26 @@ class erLhcoreClassExtensionTwilio
 
             $chat = new erLhcoreClassModelChat();
             $chat->phone = str_replace($tPhone->base_phone,'',$params['phone_number']);
-            $chat->dep_id = $params['dep_id'];
+            $chat->dep_id = isset($params['dep_id']) ? $params['dep_id'] : 0;
 
             if ($chat->dep_id == 0) {
-                $departments = erLhcoreClassModelDepartament::getList(array(
-                    'limit' => 1,
-                    'filter' => array(
-                        'disabled' => 0
-                    )
-                ));
-
-                if (! empty($departments)) {
-                    $department = array_shift($departments);
-                    $chat->dep_id = $department->id;
-                    $chat->priority = $department->priority;
+                if ($tPhone->dep_id > 0) {
+                    $chat->dep_id = $tPhone->dep_id;
                 } else {
-                    throw new Exception('Could not detect default department');
+                    $departments = erLhcoreClassModelDepartament::getList(array(
+                        'limit' => 1,
+                        'filter' => array(
+                            'disabled' => 0
+                        )
+                    ));
+
+                    if (! empty($departments)) {
+                        $department = array_shift($departments);
+                        $chat->dep_id = $department->id;
+                        $chat->priority = $department->priority;
+                    } else {
+                        throw new Exception('Could not detect default department');
+                    }
                 }
             }
 
