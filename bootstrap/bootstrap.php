@@ -692,7 +692,7 @@ class erLhcoreClassExtensionTwilio
 
                 if (is_object($responder) && $responder->offline_message != '' && !erLhcoreClassChat::isOnline($chat->dep_id, false, array(
                         'online_timeout' => (int) erLhcoreClassModelChatConfig::fetch('sync_sound_settings')->data['online_timeout'],
-                        'ignore_user_status' => false
+                        'ignore_user_status' => (int)erLhcoreClassModelChatConfig::fetch('ignore_user_status')->current_value
                     ))) {
                     $msgResponder = new erLhcoreClassModelmsg();
                     $msgResponder->msg = trim($responder->offline_message);
@@ -883,7 +883,7 @@ class erLhcoreClassExtensionTwilio
 
                 if ($responder->offline_message != '' && !erLhcoreClassChat::isOnline($chat->dep_id, false, array(
                         'online_timeout' => (int) erLhcoreClassModelChatConfig::fetch('sync_sound_settings')->data['online_timeout'],
-                        'ignore_user_status' => false
+                        'ignore_user_status' => (int)erLhcoreClassModelChatConfig::fetch('ignore_user_status')->current_value
                     ))) {
                     $msg = new erLhcoreClassModelmsg();
                     $msg->msg = trim($responder->offline_message);

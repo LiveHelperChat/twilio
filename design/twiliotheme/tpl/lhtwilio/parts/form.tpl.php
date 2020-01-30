@@ -5,7 +5,7 @@
 
 <div class="form-group">
     <label><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('module/fbmessenger','Base Phone Number');?></label>
-    <input type="text" maxlength="25" class="form-control" placeholder="+1" name="base_phone" value="<?php echo htmlspecialchars($item->base_phone)?>" />
+    <input type="text" maxlength="25" class="form-control" placeholder="E.g +1" name="base_phone" value="<?php echo htmlspecialchars($item->base_phone)?>" />
 </div>
 
 <div class="form-group">
