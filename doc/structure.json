@@ -68,6 +68,14 @@
                 "extra": ""
             },
             {
+                "field": "responder_timeout",
+                "type": "int(11) unsigned",
+                "null": "NO",
+                "key": "",
+                "default": null,
+                "extra": ""
+            },
+            {
                 "field": "dep_id",
                 "type": "int(11) unsigned",
                 "null": "NO",

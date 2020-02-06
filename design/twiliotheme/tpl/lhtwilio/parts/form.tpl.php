@@ -19,9 +19,15 @@
 </div>
 
 <div class="form-group">
-    <label><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('module/fbmessenger','Chat timeout');?>*</label>
+    <label><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('module/fbmessenger','Chat timeout (seconds)');?>*</label>
     <input type="text" maxlength="35" class="form-control" name="chat_timeout" value="<?php echo htmlspecialchars($item->chat_timeout)?>" />
     <p><i><small>How long chat is considered existing before new chat is created</small></i></p>
+</div>
+
+<div class="form-group">
+    <label><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('module/fbmessenger','Close auto responder timeout (seconds)');?>*</label>
+    <input type="text" maxlength="35" class="form-control" name="responder_timeout" value="<?php echo htmlspecialchars($item->responder_timeout)?>" />
+    <p><i><small>How long we have to wait before another closed department message is send from last send message.</small></i></p>
 </div>
 
 <div class="form-group">

@@ -39,6 +39,11 @@ $def->properties['chat_timeout']->columnName   = 'chat_timeout';
 $def->properties['chat_timeout']->propertyName = 'chat_timeout';
 $def->properties['chat_timeout']->propertyType = ezcPersistentObjectProperty::PHP_TYPE_INT;
 
+$def->properties['responder_timeout'] = new ezcPersistentObjectProperty();
+$def->properties['responder_timeout']->columnName   = 'responder_timeout';
+$def->properties['responder_timeout']->propertyName = 'responder_timeout';
+$def->properties['responder_timeout']->propertyType = ezcPersistentObjectProperty::PHP_TYPE_INT;
+
 $def->properties['originator'] = new ezcPersistentObjectProperty();
 $def->properties['originator']->columnName   = 'originator';
 $def->properties['originator']->propertyName = 'originator';

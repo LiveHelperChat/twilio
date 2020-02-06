@@ -685,6 +685,8 @@ class erLhcoreClassExtensionTwilio
                 }
             }
 
+            $chatVariables = $chat->chat_variables_array;
+
             // Auto responder if department is offline
             if ($chat->auto_responder !== false) {
 
@@ -692,21 +694,27 @@ class erLhcoreClassExtensionTwilio
 
                 if (is_object($responder) && $responder->offline_message != '' && !erLhcoreClassChat::isOnline($chat->dep_id, false, array(
                         'online_timeout' => (int) erLhcoreClassModelChatConfig::fetch('sync_sound_settings')->data['online_timeout'],
-                        'ignore_user_status' => (int)erLhcoreClassModelChatConfig::fetch('ignore_user_status')->current_value
+                        'ignore_user_status' => (int)erLhcoreClassModelChatConfig::fetch('ignore_user_status')->current_value,
+                        'exclude_bot' => true
                     ))) {
-                    $msgResponder = new erLhcoreClassModelmsg();
-                    $msgResponder->msg = trim($responder->offline_message);
-                    $msgResponder->chat_id = $chat->id;
-                    $msgResponder->name_support = $responder->operator != '' ? $responder->operator : erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchat','Live Support');
-                    $msgResponder->user_id = -2;
-                    $msgResponder->time = time() + 5;
-                    erLhcoreClassChat::getSession()->save($msgResponder);
+                    if (!isset($chatVariables['twilio_chat_timeout']) || $chatVariables['twilio_chat_timeout'] < time() - (int)$twilioPhone->responder_timeout) {
+                        $chatVariables['twilio_chat_timeout'] = time();
+                        $chat->chat_variables_array = $chatVariables;
+                        $chat->chat_variables = json_encode($chatVariables);
 
-                    if ($chat->last_msg_id < $msgResponder->id) {
-                        $chat->last_msg_id = $msgResponder->id;
+                        $msgResponder = new erLhcoreClassModelmsg();
+                        $msgResponder->msg = trim($responder->offline_message);
+                        $msgResponder->chat_id = $chat->id;
+                        $msgResponder->name_support = $responder->operator != '' ? $responder->operator : erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchat','Live Support');
+                        $msgResponder->user_id = -2;
+                        $msgResponder->time = time() + 5;
+                        erLhcoreClassChat::getSession()->save($msgResponder);
+
+                        if ($chat->last_msg_id < $msgResponder->id) {
+                            $chat->last_msg_id = $msgResponder->id;
+                        }
+                        $this->sendSMSUser(array('chat' => $chat, 'msg' => $msgResponder));
                     }
-
-                    $this->sendSMSUser(array('chat' => $chat, 'msg' => $msgResponder));
                 }
             }
 
@@ -714,13 +722,14 @@ class erLhcoreClassExtensionTwilio
             $db = ezcDbInstance::get();
             $db->beginTransaction();
 
-            $stmt = $db->prepare('UPDATE lh_chat SET pnd_time = :pnd_time, status = :status, user_id = :user_id, status_sub_sub = :status_sub_sub, last_user_msg_time = :last_user_msg_time, last_msg_id = :last_msg_id, has_unread_messages = 1 WHERE id = :id');
+            $stmt = $db->prepare('UPDATE lh_chat SET pnd_time = :pnd_time, chat_variables = :chat_variables, status = :status, user_id = :user_id, status_sub_sub = :status_sub_sub, last_user_msg_time = :last_user_msg_time, last_msg_id = :last_msg_id, has_unread_messages = 1 WHERE id = :id');
             $stmt->bindValue(':id', $chat->id, PDO::PARAM_INT);
             $stmt->bindValue(':last_user_msg_time', $msg->time, PDO::PARAM_INT);
             $stmt->bindValue(':status',  $chat->status, PDO::PARAM_INT);
             $stmt->bindValue(':user_id',  $chat->user_id, PDO::PARAM_INT);
             $stmt->bindValue(':pnd_time',  $chat->pnd_time, PDO::PARAM_INT);
             $stmt->bindValue(':status_sub_sub',  $chat->status_sub_sub, PDO::PARAM_INT);
+            $stmt->bindValue(':chat_variables',  $chat->chat_variables, PDO::PARAM_STR);
 
             // Set last message ID
             if ($chat->last_msg_id < $msg->id) {
@@ -831,11 +840,14 @@ class erLhcoreClassExtensionTwilio
             $chat->hash = erLhcoreClassChat::generateHash();
             $chat->referrer = '';
             $chat->session_referrer = '';
-            $chat->chat_variables = json_encode(array(
+
+            $chatVariables = array(
                 'twilio_sms_chat' => true,
                 'twilio_phone_id' => $twilioPhone->id,
-                'twilio_originator' => $params['To']
-            ));
+                'twilio_originator' => $params['To'],
+            );
+
+            $chat->chat_variables = json_encode($chatVariables);
 
             if ($params['FromCountry'] != '') {
                 $chat->country_code = strtolower($params['FromCountry']);
@@ -883,7 +895,8 @@ class erLhcoreClassExtensionTwilio
 
                 if ($responder->offline_message != '' && !erLhcoreClassChat::isOnline($chat->dep_id, false, array(
                         'online_timeout' => (int) erLhcoreClassModelChatConfig::fetch('sync_sound_settings')->data['online_timeout'],
-                        'ignore_user_status' => (int)erLhcoreClassModelChatConfig::fetch('ignore_user_status')->current_value
+                        'ignore_user_status' => (int)erLhcoreClassModelChatConfig::fetch('ignore_user_status')->current_value,
+                        'exclude_bot' => true
                     ))) {
                     $msg = new erLhcoreClassModelmsg();
                     $msg->msg = trim($responder->offline_message);
@@ -898,6 +911,10 @@ class erLhcoreClassExtensionTwilio
                     if ($chat->last_msg_id < $msg->id) {
                         $chat->last_msg_id = $msg->id;
                     }
+
+                    $chatVariables['twilio_chat_timeout'] = time();
+                    $chat->chat_variables_array = $chatVariables;
+                    $chat->chat_variables = json_encode($chatVariables);
                 }
             }
 

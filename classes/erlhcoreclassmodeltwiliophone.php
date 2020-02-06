@@ -22,7 +22,8 @@ class erLhcoreClassModelTwilioPhone
             'auth_token' => $this->auth_token,
             'dep_id' => $this->dep_id,
             'chat_timeout' => $this->chat_timeout,
-            'originator' => $this->originator
+            'originator' => $this->originator,
+            'responder_timeout' => $this->responder_timeout
         );
     }
 
@@ -69,8 +70,10 @@ class erLhcoreClassModelTwilioPhone
 
     public $base_phone = '';
 
-    public $chat_timeout = 3600*72;   
-    
+    public $chat_timeout = 3600*72;
+
+    public $responder_timeout = 12*3600;
+
     public $originator = ''; 
     
 }

@@ -11,6 +11,9 @@ class erLhcoreClassTwilioValidator
                 'base_phone' => new ezcInputFormDefinitionElement(
                     ezcInputFormDefinitionElement::OPTIONAL, 'unsafe_raw'
                 ),
+                'responder_timeout' => new ezcInputFormDefinitionElement(
+                    ezcInputFormDefinitionElement::OPTIONAL, 'unsafe_raw'
+                ),
                 'account_sid' => new ezcInputFormDefinitionElement(
                     ezcInputFormDefinitionElement::OPTIONAL, 'unsafe_raw'
                 ),
@@ -79,8 +82,15 @@ class erLhcoreClassTwilioValidator
             } else {
                 $Errors[] =  erTranslationClassLhTranslation::getInstance()->getTranslation('xmppservice/operatorvalidator','Please enter chat timeout!');
             }
-            
-            return $Errors;        
+
+            if ( $form->hasValidData( 'responder_timeout' ))
+            {
+                $item->responder_timeout = $form->responder_timeout;
+            } else {
+                $item->responder_timeout = 0;
+            }
+
+            return $Errors;
     }
     
 }
