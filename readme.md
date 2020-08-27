@@ -16,4 +16,6 @@ or https://github.com/LiveHelperChat/twilio/blob/master/doc/install.sql
 6. Send SMS to registered phone number
 7. Enjoy :)
 
+Twilio module you will find in left menu under Modules.
+
 Callback URL you will find once your register phone in back office.
