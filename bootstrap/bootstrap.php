@@ -745,6 +745,8 @@ class erLhcoreClassExtensionTwilio
 
             $db->commit();
 
+            $this->sendBotResponse($chat, $msg);
+
             // Standard event on unread chat messages
             if ($chat->has_unread_messages == 1 && $chat->last_user_msg_time < (time() - 5)) {
                 erLhcoreClassChatEventDispatcher::getInstance()->dispatch('chat.unread_chat', array(
@@ -875,6 +877,10 @@ class erLhcoreClassExtensionTwilio
 
             erLhcoreClassChat::getSession()->save($msg);
 
+            // Set bot
+            erLhcoreClassChatValidator::setBot($chat);
+            $this->sendBotResponse($chat, $msg);
+
             /**
              * Set appropriate chat attributes
              */
@@ -893,28 +899,31 @@ class erLhcoreClassExtensionTwilio
 
                 $chat->auto_responder_id = $responderChat->id;
 
-                if ($responder->offline_message != '' && !erLhcoreClassChat::isOnline($chat->dep_id, false, array(
-                        'online_timeout' => (int) erLhcoreClassModelChatConfig::fetch('sync_sound_settings')->data['online_timeout'],
-                        'ignore_user_status' => (int)erLhcoreClassModelChatConfig::fetch('ignore_user_status')->current_value,
-                        'exclude_bot' => true
-                    ))) {
-                    $msg = new erLhcoreClassModelmsg();
-                    $msg->msg = trim($responder->offline_message);
-                    $msg->chat_id = $chat->id;
-                    $msg->name_support = $responder->operator != '' ? $responder->operator : erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchat','Live Support');
-                    $msg->user_id = -2;
-                    $msg->time = time() + 5;
-                    erLhcoreClassChat::getSession()->save($msg);
+                if ($chat->status !== erLhcoreClassModelChat::STATUS_BOT_CHAT)
+                {
+                    if ($responder->offline_message != '' && !erLhcoreClassChat::isOnline($chat->dep_id, false, array(
+                            'online_timeout' => (int) erLhcoreClassModelChatConfig::fetch('sync_sound_settings')->data['online_timeout'],
+                            'ignore_user_status' => (int)erLhcoreClassModelChatConfig::fetch('ignore_user_status')->current_value,
+                            'exclude_bot' => true
+                        ))) {
+                        $msg = new erLhcoreClassModelmsg();
+                        $msg->msg = trim($responder->offline_message);
+                        $msg->chat_id = $chat->id;
+                        $msg->name_support = $responder->operator != '' ? $responder->operator : erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchat','Live Support');
+                        $msg->user_id = -2;
+                        $msg->time = time() + 5;
+                        erLhcoreClassChat::getSession()->save($msg);
 
-                    $messageResponder = $msg;
+                        $messageResponder = $msg;
 
-                    if ($chat->last_msg_id < $msg->id) {
-                        $chat->last_msg_id = $msg->id;
+                        if ($chat->last_msg_id < $msg->id) {
+                            $chat->last_msg_id = $msg->id;
+                        }
+
+                        $chatVariables['twilio_chat_timeout'] = time();
+                        $chat->chat_variables_array = $chatVariables;
+                        $chat->chat_variables = json_encode($chatVariables);
                     }
-
-                    $chatVariables['twilio_chat_timeout'] = time();
-                    $chat->chat_variables_array = $chatVariables;
-                    $chat->chat_variables = json_encode($chatVariables);
                 }
             }
 
@@ -947,6 +956,24 @@ class erLhcoreClassExtensionTwilio
 
             // General module signal that it has received an sms
             erLhcoreClassChatEventDispatcher::getInstance()->dispatch('twilio.sms_received',array('chat' => & $chat, 'msg' => $msg));
+        }
+    }
+
+    public function sendBotResponse($chat, $msg) {
+        if ($chat->gbot_id > 0 && (!isset($chat->chat_variables_array['gbot_disabled']) || $chat->chat_variables_array['gbot_disabled'] == 0)) {
+
+            $chat->refreshThis();
+
+            erLhcoreClassGenericBotWorkflow::userMessageAdded($chat, $msg);
+
+            // Find a new messages
+            $botMessages = erLhcoreClassModelmsg::getList(array('filter' => array('user_id' => -2, 'chat_id' => $chat->id), 'filtergt' => array('id' => $msg->id)));
+            foreach ($botMessages as $botMessage) {
+                erLhcoreClassChatEventDispatcher::getInstance()->dispatch('chat.web_add_msg_admin', array(
+                    'chat' => & $chat,
+                    'msg' => $botMessage
+                ));
+            }
         }
     }
 }
