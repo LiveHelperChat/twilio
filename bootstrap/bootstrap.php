@@ -769,7 +769,12 @@ class erLhcoreClassExtensionTwilio
 
             $db->commit();
 
-            $this->sendBotResponse($chat, $msg);
+            if ($renotify == true) {
+                erLhcoreClassChatValidator::setBot($chat, array('msg' => $msg));
+                $this->sendBotResponse($chat, $msg, array('init' => true));
+            } else {
+                $this->sendBotResponse($chat, $msg);
+            }
 
             // Standard event on unread chat messages
             if ($chat->has_unread_messages == 1 && $chat->last_user_msg_time < (time() - 5)) {
