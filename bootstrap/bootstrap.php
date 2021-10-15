@@ -2,7 +2,7 @@
 
 class erLhcoreClassExtensionTwilio
 {
-    public function __construct()
+    public function __construct()processMMSAttatchements
     {}
 
     private $settings = array();
@@ -585,6 +585,7 @@ class erLhcoreClassExtensionTwilio
                             'image/gif' => 'gif',
                             'image/png' => 'png',
                             'image/jpeg' => 'jpg',
+                            'application/pdf' => 'pdf',
                         );
 
                         $fileUpload = new erLhcoreClassModelChatFile();
