@@ -2,7 +2,7 @@
 
 class erLhcoreClassExtensionTwilio
 {
-    public function __construct()processMMSAttatchements
+    public function __construct()
     {}
 
     private $settings = array();
