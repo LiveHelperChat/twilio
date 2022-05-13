@@ -675,12 +675,14 @@ class erLhcoreClassExtensionTwilio
                             'image/gif' => 'gif',
                             'image/png' => 'png',
                             'image/jpeg' => 'jpg',
+                            'application/pdf' => 'pdf',
                         );
 
                         $fileUpload = new erLhcoreClassModelChatFile();
                         $fileUpload->size = strlen($mediaContent);
                         $fileUpload->type = $mediaContentType;
                         $fileUpload->name = md5($params['MediaUrl'.$i] . time() . rand(0,100));
+                        $originalName = $fileUpload->name;
                         $fileUpload->date = time();
                         $fileUpload->user_id = 0;
                         $fileUpload->upload_name = 'mms.' . (key_exists($mediaContentType, $mimeTypes) ? $mimeTypes[$mediaContentType] : 'jpg');
@@ -695,7 +697,7 @@ class erLhcoreClassExtensionTwilio
 
                         erLhcoreClassChatEventDispatcher::getInstance()->dispatch('file.uploadfile.file_store', array('chat_file' => $fileUpload));
 
-                        $response .= '[file='.$fileUpload->id.'_'.md5($fileUpload->name.'_'.$chat->id).']';
+                        $response .= '[file='.$fileUpload->id.'_'.md5($originalName.'_'.$chat->id).']';
                     }
                 }
             }
