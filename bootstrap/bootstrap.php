@@ -50,6 +50,11 @@ class erLhcoreClassExtensionTwilio
             'chatsFilter'
         ));
 
+        $dispatcher->listen('xml.lists', array(
+            $this,
+            'twilioChats'
+        ));
+
         $dispatcher->listen('instance.extensions_structure', array(
             $this,
             'checkStructure'
@@ -64,6 +69,26 @@ class erLhcoreClassExtensionTwilio
             $this,
             'visitorReturned'
         ));
+    }
+
+    public function sendBotResponse($chat, $msg, $params = array()) {
+        if ($chat->gbot_id > 0 && (!isset($chat->chat_variables_array['gbot_disabled']) || $chat->chat_variables_array['gbot_disabled'] == 0)) {
+
+            $chat->refreshThis();
+
+            if (!isset($params['init']) || $params['init'] == false) {
+                erLhcoreClassGenericBotWorkflow::userMessageAdded($chat, $msg);
+            }
+
+            // Find a new messages
+            $botMessages = erLhcoreClassModelmsg::getList(array('filter' => array('user_id' => -2, 'chat_id' => $chat->id), 'filtergt' => array('id' => $msg->id)));
+            foreach ($botMessages as $botMessage) {
+                erLhcoreClassChatEventDispatcher::getInstance()->dispatch('chat.web_add_msg_admin', array(
+                    'chat' => & $chat,
+                    'msg' => $botMessage
+                ));
+            }
+        }
     }
 
     public function visitorReturned($params)
@@ -169,6 +194,25 @@ class erLhcoreClassExtensionTwilio
         if (isset($_GET['twilio_sms_chat']) && $_GET['twilio_sms_chat'] == 'true') {
             $params['filter']['innerjoin']['lhc_twilio_chat'] = array('`lh_chat`.`id`','`lhc_twilio_chat`.`chat_id`');
         }
+    }
+
+    public function twilioChats($params) {
+        $filter['innerjoin']['lhc_twilio_chat'] = array('`lh_chat`.`id`','`lhc_twilio_chat`.`chat_id`');
+        $filter['filterin']['status'] = array(0,1);
+        $filter['limit'] = 10;
+        $filter['sort'] = '`lh_chat`.`id` DESC';
+        $twilioChats = erLhcoreClassModelChat::getList($filter);
+
+        erLhcoreClassChat::prefillGetAttributes($twilioChats, array('department_name','user_status_front','phone'),array('updateIgnoreColumns','department','user'));
+
+        $columnsToHide = array('user_closed_ts','lsync','uagent','user_status_front','pnd_time','unanswered_chat','tslasign','reinform_timeout','unread_messages_informed','wait_timeout','wait_timeout_send','status_sub','timeout_message','nc_cb_executed','fbst','user_id','transfer_timeout_ts','operator_typing_id','transfer_timeout_ac','transfer_if_na','na_cb_executed','status','remarks','operation','operation_admin','screenshot_id','mail_send','online_user_id','dep_id','last_msg_id','hash','user_status','support_informed','support_informed','country_code','user_typing','user_typing_txt','lat','lon','chat_initiator','chat_variables','chat_duration','operator_typing','has_unread_messages','last_user_msg_time','additional_data');
+        $columnsName = array('id' => 'ID','chat_locale' => 'Visitor language','user_tz_identifier' => 'User time zone','department_name' => 'Department','nick' => 'Nick','time' => 'Time','referrer' => 'Referrer','session_referrer' => 'Original referrer','ip' => 'IP','country_name' => 'Country','email' => 'E-mail','priority' => 'Priority','name' => 'Department','phone' => 'Phone','city' => 'City','wait_time' => 'Waited');
+
+        $params['list']['twilio_chats'] = array('rows' => array_values($twilioChats), 'size' => count($twilioChats),
+            'hidden_columns' => $columnsToHide,
+            'timestamp_delegate' => array('time'),
+            'column_names' => $columnsName);
+
     }
 
     public function swagger($params) {
@@ -860,6 +904,13 @@ class erLhcoreClassExtensionTwilio
             $tChat->saveThis();
 
             $db->commit();
+
+            if ($renotify == true) {
+                erLhcoreClassChatValidator::setBot($chat, array('msg' => $msg));
+                $this->sendBotResponse($chat, $msg, array('init' => true));
+            } else {
+                $this->sendBotResponse($chat, $msg);
+            }
 
             // Standard event on unread chat messages
             if ($chat->has_unread_messages == 1 && $chat->last_user_msg_time < (time() - 5)) {

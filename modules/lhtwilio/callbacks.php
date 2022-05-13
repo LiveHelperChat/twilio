@@ -1,6 +1,6 @@
 <?php
 
-erLhcoreClassLog::write(print_r($_POST,true));
+//erLhcoreClassLog::write(print_r($_POST,true));
 
 /*$dumpArray['ToCountry'] = 'US';
 $dumpArray['ToState'] = 'AZ';
@@ -28,9 +28,9 @@ try {
     $dynmarkSMS = erLhcoreClassModule::getExtensionInstance('erLhcoreClassExtensionTwilio');
     $dynmarkSMS->processCallback($dumpArray);
 } catch (Exception $e) {
-    throw $e;
     erLhcoreClassLog::write(print_r($_POST,true));
     erLhcoreClassLog::write(print_r($e,true));
+    throw $e;
 }
 
 header("content-type: text/xml");

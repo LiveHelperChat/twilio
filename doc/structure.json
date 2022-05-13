@@ -19,7 +19,7 @@
             },
             {
                 "field": "phone",
-                "type": "varchar(15)",
+                "type": "varchar(35)",
                 "null": "NO",
                 "key": "",
                 "default": null,
@@ -85,7 +85,7 @@
             },
             {
                 "field": "phone",
-                "type": "varchar(15)",
+                "type": "varchar(35)",
                 "null": "NO",
                 "key": "",
                 "default": null,
@@ -101,7 +101,7 @@
             },
             {
                 "field": "originator",
-                "type": "varchar(15)",
+                "type": "varchar(35)",
                 "null": "NO",
                 "key": "",
                 "default": null,
