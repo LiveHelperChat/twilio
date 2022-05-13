@@ -1,7 +1,7 @@
 <?php
 $chatVariables = $chat->chat_variables_array;
 if (isset($chatVariables['twilio_sms_chat'])) : ?>
-	<tr ng-non-bindable>
+	<tr>
 		<td><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('chat/adminchat','SMS')?></td>
 		<td><strong><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('chat/adminchat','YES')?></strong>&nbsp;<?php if (isset($chatVariables['twilio_sms_chat_send'])) : ?>(<?php echo $chatVariables['twilio_sms_chat_send']?> <?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('chat/adminchat','SMS were send')?>)<?php endif;?>	
 		<script>

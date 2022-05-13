@@ -3,4 +3,5 @@
 <ul>
     <li><a href="<?php echo erLhcoreClassDesign::baseurl('twilio/list')?>"><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('module/fbmessenger','Twilio phones');?></a></li>
     <li><a href="<?php echo erLhcoreClassDesign::baseurl('twilio/sendmessage')?>"><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('pagelayout/pagelayout','Send message');?></a></li>
+    <li><a href="<?php echo erLhcoreClassDesign::baseurl('twilio/notification')?>"><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('pagelayout/pagelayout','SMS Template');?></a></li>
 </ul>

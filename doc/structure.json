@@ -19,7 +19,7 @@
             },
             {
                 "field": "phone",
-                "type": "varchar(35)",
+                "type": "varchar(15)",
                 "null": "NO",
                 "key": "",
                 "default": null,
@@ -85,7 +85,7 @@
             },
             {
                 "field": "phone",
-                "type": "varchar(35)",
+                "type": "varchar(15)",
                 "null": "NO",
                 "key": "",
                 "default": null,
@@ -101,7 +101,7 @@
             },
             {
                 "field": "originator",
-                "type": "varchar(35)",
+                "type": "varchar(15)",
                 "null": "NO",
                 "key": "",
                 "default": null,
@@ -129,7 +129,7 @@
     "tables_data_identifier": {    },
     "tables_indexes" : {    },
     "tables_create": {
-    	"lhc_twilio_chat" : "CREATE TABLE `lhc_twilio_chat` (  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT, `chat_id` bigint(20) unsigned NOT NULL, `phone` varchar(35) NOT NULL, `ctime` int(11) NOT NULL, `utime` int(11) NOT NULL, `tphone_id` int(11) NOT NULL, PRIMARY KEY (`id`),  KEY `phone_utime` (`phone`,`utime`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8",
-    	"lhc_twilio_phone" : "CREATE TABLE `lhc_twilio_phone` (  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT, `base_phone` varchar(35) NOT NULL, `phone` varchar(35) NOT NULL,`originator` varchar(35) NOT NULL, `account_sid` varchar(35), `auth_token` varchar(35), `dep_id` int(11) unsigned NOT NULL, `chat_timeout` int(11) unsigned NOT NULL, PRIMARY KEY (`id`), KEY `phone` (`phone`)) ENGINE=InnoDB DEFAULT CHARSET=utf8"
+    	"lhc_twilio_chat" : "CREATE TABLE `lhc_twilio_chat` (  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT, `chat_id` bigint(20) unsigned NOT NULL, `phone` varchar(15) NOT NULL, `ctime` int(11) NOT NULL, `utime` int(11) NOT NULL, `tphone_id` int(11) NOT NULL, PRIMARY KEY (`id`),  KEY `phone_utime` (`phone`,`utime`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8",
+    	"lhc_twilio_phone" : "CREATE TABLE `lhc_twilio_phone` (  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT, `phone` varchar(15) NOT NULL, `base_phone` varchar(25) NOT NULL,`originator` varchar(15) NOT NULL, `account_sid` varchar(35), `auth_token` varchar(35), `dep_id` int(11) unsigned NOT NULL, `chat_timeout` int(11) unsigned NOT NULL, PRIMARY KEY (`id`), KEY `phone` (`phone`)) ENGINE=InnoDB DEFAULT CHARSET=utf8"
     }
 }

@@ -92,5 +92,26 @@ class erLhcoreClassTwilioValidator
 
             return $Errors;
     }
-    
+
+    public static function validateNotification(& $item)
+    {
+            $definition = array(
+                'message' => new ezcInputFormDefinitionElement(
+                    ezcInputFormDefinitionElement::OPTIONAL, 'unsafe_raw'
+                )
+            );
+
+            $form = new ezcInputForm( INPUT_POST, $definition );
+            $Errors = array();
+
+            if ( $form->hasValidData( 'message' ) && $form->message != '')
+            {
+                $item['message'] = $form->message;
+            } else {
+                throw new Exception(erTranslationClassLhTranslation::getInstance()->getTranslation('xmppservice/operatorvalidator','Please enter notification message!'));
+            }
+
+            return $Errors;
+    }
+
 }

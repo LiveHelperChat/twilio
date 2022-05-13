@@ -50,35 +50,125 @@ class erLhcoreClassExtensionTwilio
             'chatsFilter'
         ));
 
-        $dispatcher->listen('xml.lists', array(
+        $dispatcher->listen('instance.extensions_structure', array(
             $this,
-            'twilioChats'
+            'checkStructure'
         ));
+
+        $dispatcher->listen('instance.registered.created', array(
+            $this,
+            'instanceCreated'
+        ));
+
+        $dispatcher->listen('onlineuser.visitor_returned_inform', array(
+            $this,
+            'visitorReturned'
+        ));
+    }
+
+    public function visitorReturned($params)
+    {
+        $onlineUser = $params['ou'];
+
+        $attr = $onlineUser->online_attr_system_array;
+
+        $phoneRecipient = array();
+
+        if (isset($attr['lhc_ir_phone'])) {
+            $phoneRecipient = explode(',',str_replace(' ','',$attr['lhc_ir_phone']));
+        }
+
+        if (empty($phoneRecipient)) {
+            return;
+        }
+
+        $twilioOptions = erLhcoreClassModelChatConfig::fetch('twilio_notification');
+        $data = (array) $twilioOptions->data;
+        
+        if (!isset($data['message']) || empty($data['message'])) {
+            return;
+        }
+
+        $chat = $onlineUser->chat;
+
+        $message = str_replace(array(
+            '{chat_duration}',
+            '{waited}',
+            '{created}',
+            '{user_left}',
+            '{chat_id}',
+            '{phone}',
+            '{name}',
+            '{email}',
+            '{url_request}',
+            '{ip}',
+            '{department}',
+            '{country}',
+            '{city}'
+        ), array(
+            ($chat instanceof erLhcoreClassModelChat && $chat->chat_duration > 0 ? $chat->chat_duration_front : '-'),
+            ($chat instanceof erLhcoreClassModelChat && $chat->wait_time > 0 ? $chat->wait_time_front : '-'),
+            ($chat instanceof erLhcoreClassModelChat ? $chat->time_created_front : '-'),
+            ($chat instanceof erLhcoreClassModelChat && $chat->user_closed_ts > 0 && $chat->user_status == 1 ? $chat->user_closed_ts_front : '-'),
+            ($chat instanceof erLhcoreClassModelChat ? $chat->id : '-'),
+            ($chat instanceof erLhcoreClassModelChat ? $chat->phone : '-'),
+            $onlineUser->nick,
+            ($chat instanceof erLhcoreClassModelChat ? $chat->email : '-'),
+            $onlineUser->referrer,
+            $onlineUser->ip,
+            ($chat instanceof erLhcoreClassModelChat ? (string)$chat->department : '-'),
+            $onlineUser->user_country_name,
+            $onlineUser->city),
+            $data['message']);
+
+        $tPhone = erLhcoreClassModelTwilioPhone::findOne();
+
+        if ($tPhone instanceof erLhcoreClassModelTwilioPhone) {
+            foreach ($phoneRecipient as $phone) {
+                $paramsSend = array(
+                    'create_chat' => false,
+                    'twilio_id' => $tPhone->id,
+                    'phone_number' => $phone,
+                    'msg' => $message
+                );
+                try {
+                    self::sendManualMessage($paramsSend);
+                } catch (Exception $e) {
+                    erLhcoreClassLog::write($e->getMessage());
+                }
+            }
+        }
+    }
+
+    /**
+     * Checks automated hosting structure
+     *
+     * This part is executed once in manager is run this cronjob.
+     * php cron.php -s site_admin -e instance -c cron/extensions_update
+     *
+     * */
+    public function checkStructure()
+    {
+        erLhcoreClassUpdate::doTablesUpdate(json_decode(file_get_contents('extension/twilio/doc/structure.json'), true));
+    }
+
+    /**
+     * Used only in automated hosting enviroment
+     */
+    public function instanceCreated($params)
+    {
+        try {
+            // Just do table updates
+            erLhcoreClassUpdate::doTablesUpdate(json_decode(file_get_contents('extension/twilio/doc/structure.json'), true));
+        } catch (Exception $e) {
+            erLhcoreClassLog::write(print_r($e, true));
+        }
     }
 
     public function chatsFilter($params) {
         if (isset($_GET['twilio_sms_chat']) && $_GET['twilio_sms_chat'] == 'true') {
             $params['filter']['innerjoin']['lhc_twilio_chat'] = array('`lh_chat`.`id`','`lhc_twilio_chat`.`chat_id`');
         }
-    }
-
-    public function twilioChats($params) {
-        $filter['innerjoin']['lhc_twilio_chat'] = array('`lh_chat`.`id`','`lhc_twilio_chat`.`chat_id`');
-        $filter['filterin']['status'] = array(0,1);
-        $filter['limit'] = 10;
-        $filter['sort'] = '`lh_chat`.`id` DESC';
-        $twilioChats = erLhcoreClassModelChat::getList($filter);
-
-        erLhcoreClassChat::prefillGetAttributes($twilioChats, array('department_name','user_status_front','phone'),array('updateIgnoreColumns','department','user'));
-
-        $columnsToHide = array('user_closed_ts','lsync','uagent','user_status_front','pnd_time','unanswered_chat','tslasign','reinform_timeout','unread_messages_informed','wait_timeout','wait_timeout_send','status_sub','timeout_message','nc_cb_executed','fbst','user_id','transfer_timeout_ts','operator_typing_id','transfer_timeout_ac','transfer_if_na','na_cb_executed','status','remarks','operation','operation_admin','screenshot_id','mail_send','online_user_id','dep_id','last_msg_id','hash','user_status','support_informed','support_informed','country_code','user_typing','user_typing_txt','lat','lon','chat_initiator','chat_variables','chat_duration','operator_typing','has_unread_messages','last_user_msg_time','additional_data');
-        $columnsName = array('id' => 'ID','chat_locale' => 'Visitor language','user_tz_identifier' => 'User time zone','department_name' => 'Department','nick' => 'Nick','time' => 'Time','referrer' => 'Referrer','session_referrer' => 'Original referrer','ip' => 'IP','country_name' => 'Country','email' => 'E-mail','priority' => 'Priority','name' => 'Department','phone' => 'Phone','city' => 'City','wait_time' => 'Waited');
-
-        $params['list']['twilio_chats'] = array('rows' => array_values($twilioChats), 'size' => count($twilioChats),
-            'hidden_columns' => $columnsToHide,
-            'timestamp_delegate' => array('time'),
-            'column_names' => $columnsName);
-
     }
 
     public function swagger($params) {
@@ -769,13 +859,6 @@ class erLhcoreClassExtensionTwilio
 
             $db->commit();
 
-            if ($renotify == true) {
-                erLhcoreClassChatValidator::setBot($chat, array('msg' => $msg));
-                $this->sendBotResponse($chat, $msg, array('init' => true));
-            } else {
-                $this->sendBotResponse($chat, $msg);
-            }
-
             // Standard event on unread chat messages
             if ($chat->has_unread_messages == 1 && $chat->last_user_msg_time < (time() - 5)) {
                 erLhcoreClassChatEventDispatcher::getInstance()->dispatch('chat.unread_chat', array(
@@ -906,10 +989,6 @@ class erLhcoreClassExtensionTwilio
 
             erLhcoreClassChat::getSession()->save($msg);
 
-            // Set bot
-            erLhcoreClassChatValidator::setBot($chat, array('msg' => $msg));
-            $this->sendBotResponse($chat, $msg, array('init' => true));
-
             /**
              * Set appropriate chat attributes
              */
@@ -928,31 +1007,28 @@ class erLhcoreClassExtensionTwilio
 
                 $chat->auto_responder_id = $responderChat->id;
 
-                if ($chat->status !== erLhcoreClassModelChat::STATUS_BOT_CHAT)
-                {
-                    if ($responder->offline_message != '' && !erLhcoreClassChat::isOnline($chat->dep_id, false, array(
-                            'online_timeout' => (int) erLhcoreClassModelChatConfig::fetch('sync_sound_settings')->data['online_timeout'],
-                            'ignore_user_status' => (int)erLhcoreClassModelChatConfig::fetch('ignore_user_status')->current_value,
-                            'exclude_bot' => true
-                        ))) {
-                        $msg = new erLhcoreClassModelmsg();
-                        $msg->msg = trim($responder->offline_message);
-                        $msg->chat_id = $chat->id;
-                        $msg->name_support = $responder->operator != '' ? $responder->operator : erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchat','Live Support');
-                        $msg->user_id = -2;
-                        $msg->time = time() + 5;
-                        erLhcoreClassChat::getSession()->save($msg);
+                if ($responder->offline_message != '' && !erLhcoreClassChat::isOnline($chat->dep_id, false, array(
+                        'online_timeout' => (int) erLhcoreClassModelChatConfig::fetch('sync_sound_settings')->data['online_timeout'],
+                        'ignore_user_status' => (int)erLhcoreClassModelChatConfig::fetch('ignore_user_status')->current_value,
+                        'exclude_bot' => true
+                    ))) {
+                    $msg = new erLhcoreClassModelmsg();
+                    $msg->msg = trim($responder->offline_message);
+                    $msg->chat_id = $chat->id;
+                    $msg->name_support = $responder->operator != '' ? $responder->operator : erTranslationClassLhTranslation::getInstance()->getTranslation('chat/startchat','Live Support');
+                    $msg->user_id = -2;
+                    $msg->time = time() + 5;
+                    erLhcoreClassChat::getSession()->save($msg);
 
-                        $messageResponder = $msg;
+                    $messageResponder = $msg;
 
-                        if ($chat->last_msg_id < $msg->id) {
-                            $chat->last_msg_id = $msg->id;
-                        }
-
-                        $chatVariables['twilio_chat_timeout'] = time();
-                        $chat->chat_variables_array = $chatVariables;
-                        $chat->chat_variables = json_encode($chatVariables);
+                    if ($chat->last_msg_id < $msg->id) {
+                        $chat->last_msg_id = $msg->id;
                     }
+
+                    $chatVariables['twilio_chat_timeout'] = time();
+                    $chat->chat_variables_array = $chatVariables;
+                    $chat->chat_variables = json_encode($chatVariables);
                 }
             }
 
@@ -985,26 +1061,6 @@ class erLhcoreClassExtensionTwilio
 
             // General module signal that it has received an sms
             erLhcoreClassChatEventDispatcher::getInstance()->dispatch('twilio.sms_received',array('chat' => & $chat, 'msg' => $msg));
-        }
-    }
-
-    public function sendBotResponse($chat, $msg, $params = array()) {
-        if ($chat->gbot_id > 0 && (!isset($chat->chat_variables_array['gbot_disabled']) || $chat->chat_variables_array['gbot_disabled'] == 0)) {
-
-            $chat->refreshThis();
-
-            if (!isset($params['init']) || $params['init'] == false) {
-                erLhcoreClassGenericBotWorkflow::userMessageAdded($chat, $msg);
-            }
-
-            // Find a new messages
-            $botMessages = erLhcoreClassModelmsg::getList(array('filter' => array('user_id' => -2, 'chat_id' => $chat->id), 'filtergt' => array('id' => $msg->id)));
-            foreach ($botMessages as $botMessage) {
-                erLhcoreClassChatEventDispatcher::getInstance()->dispatch('chat.web_add_msg_admin', array(
-                    'chat' => & $chat,
-                    'msg' => $botMessage
-                ));
-            }
         }
     }
 }

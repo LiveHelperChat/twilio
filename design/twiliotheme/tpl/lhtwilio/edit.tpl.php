@@ -4,7 +4,7 @@
 	<?php include(erLhcoreClassDesign::designtpl('lhkernel/validation_error.tpl.php'));?>
 <?php endif; ?>
 
-<form action="<?php echo erLhcoreClassDesign::baseurl('twilio/edit')?>/<?php echo $item->id?>" method="post" ng-non-bindable>
+<form action="<?php echo erLhcoreClassDesign::baseurl('twilio/edit')?>/<?php echo $item->id?>" method="post">
 
 	<?php include(erLhcoreClassDesign::designtpl('lhtwilio/parts/form.tpl.php'));?>
 
