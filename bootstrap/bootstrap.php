@@ -424,6 +424,7 @@ class erLhcoreClassExtensionTwilio
             $recipientPhone = $tPhone->base_phone . $recipientPhone;
         }
 
+
         $paramsSend = array(
             'AccountSidSend' => $tPhone->account_sid,
             'AuthTokenSend' => $tPhone->auth_token,
@@ -431,6 +432,10 @@ class erLhcoreClassExtensionTwilio
             'text' => $params['msg'] . $signatureText,
             'recipient' => $recipientPhone
         );
+
+        if ($paramsSend['originator'] == '') {
+            $paramsSend['originator'] = $tPhone->phone;
+        }
 
         if ($tPhone->ah_provided == 1) {
 
