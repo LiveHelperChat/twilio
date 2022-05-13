@@ -12,7 +12,7 @@
     <a title="<?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('sugarcrm/module', 'Open in a new window'); ?>" ng-click="lhc.startChatNewWindow(<?php echo $chat->id?>,'<?php echo erLhcoreClassDesign::shrt($chat->nick,10,'...',30,ENT_QUOTES);?>')"><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('twilio/module','Open chat')?></a>
 <?php endif; ?>
 
-<form action="" method="post">
+<form action="" method="post" ng-non-bindable>
 
     <div class="form-group">
     	<label><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('twilio/module','Phone number')?></label> 
