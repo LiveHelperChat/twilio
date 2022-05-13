@@ -27,6 +27,10 @@ if (ezcInputForm::hasPostData()) {
 
 $Result['content'] = $tpl->fetch();
 $Result['path'] = array(
+    array(
+        'url' => erLhcoreClassDesign::baseurl('twilio/index'),
+        'title' => erTranslationClassLhTranslation::getInstance()->getTranslation('module/fbmessenger', 'Twilio')
+    ),
     array (
         'url' =>erLhcoreClassDesign::baseurl('twilio/list'),
         'title' => erTranslationClassLhTranslation::getInstance()->getTranslation('module/fbmessenger','Twilio phones')

@@ -94,6 +94,10 @@ $tpl->set('input',$input);
 $Result['content'] = $tpl->fetch();
 $Result['path'] = array(
     array(
+        'url' => erLhcoreClassDesign::baseurl('twilio/index'),
+        'title' => erTranslationClassLhTranslation::getInstance()->getTranslation('module/fbmessenger', 'Twilio')
+    ),
+    array(
         'title' => erTranslationClassLhTranslation::getInstance()->getTranslation('sugarcrm/module', 'Send SMS')
     )
 );

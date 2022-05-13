@@ -54,6 +54,120 @@ class erLhcoreClassExtensionTwilio
             $this,
             'twilioChats'
         ));
+
+        $dispatcher->listen('instance.extensions_structure', array(
+            $this,
+            'checkStructure'
+        ));
+
+        $dispatcher->listen('instance.registered.created', array(
+            $this,
+            'instanceCreated'
+        ));
+
+        $dispatcher->listen('onlineuser.visitor_returned_inform', array(
+            $this,
+            'visitorReturned'
+        ));
+    }
+
+    public function visitorReturned($params)
+    {
+        $onlineUser = $params['ou'];
+
+        $attr = $onlineUser->online_attr_system_array;
+
+        $phoneRecipient = array();
+
+        if (isset($attr['lhc_ir_phone'])) {
+            $phoneRecipient = explode(',',str_replace(' ','',$attr['lhc_ir_phone']));
+        }
+
+        if (empty($phoneRecipient)) {
+            return;
+        }
+
+        $twilioOptions = erLhcoreClassModelChatConfig::fetch('twilio_notification');
+        $data = (array) $twilioOptions->data;
+        
+        if (!isset($data['message']) || empty($data['message'])) {
+            return;
+        }
+
+        $chat = $onlineUser->chat;
+
+        $message = str_replace(array(
+            '{chat_duration}',
+            '{waited}',
+            '{created}',
+            '{user_left}',
+            '{chat_id}',
+            '{phone}',
+            '{name}',
+            '{email}',
+            '{url_request}',
+            '{ip}',
+            '{department}',
+            '{country}',
+            '{city}'
+        ), array(
+            ($chat instanceof erLhcoreClassModelChat && $chat->chat_duration > 0 ? $chat->chat_duration_front : '-'),
+            ($chat instanceof erLhcoreClassModelChat && $chat->wait_time > 0 ? $chat->wait_time_front : '-'),
+            ($chat instanceof erLhcoreClassModelChat ? $chat->time_created_front : '-'),
+            ($chat instanceof erLhcoreClassModelChat && $chat->user_closed_ts > 0 && $chat->user_status == 1 ? $chat->user_closed_ts_front : '-'),
+            ($chat instanceof erLhcoreClassModelChat ? $chat->id : '-'),
+            ($chat instanceof erLhcoreClassModelChat ? $chat->phone : '-'),
+            $onlineUser->nick,
+            ($chat instanceof erLhcoreClassModelChat ? $chat->email : '-'),
+            $onlineUser->referrer,
+            $onlineUser->ip,
+            ($chat instanceof erLhcoreClassModelChat ? (string)$chat->department : '-'),
+            $onlineUser->user_country_name,
+            $onlineUser->city),
+            $data['message']);
+
+        $tPhone = erLhcoreClassModelTwilioPhone::findOne();
+
+        if ($tPhone instanceof erLhcoreClassModelTwilioPhone) {
+            foreach ($phoneRecipient as $phone) {
+                $paramsSend = array(
+                    'create_chat' => false,
+                    'twilio_id' => $tPhone->id,
+                    'phone_number' => $phone,
+                    'msg' => $message
+                );
+                try {
+                    self::sendManualMessage($paramsSend);
+                } catch (Exception $e) {
+                    erLhcoreClassLog::write($e->getMessage());
+                }
+            }
+        }
+    }
+
+    /**
+     * Checks automated hosting structure
+     *
+     * This part is executed once in manager is run this cronjob.
+     * php cron.php -s site_admin -e instance -c cron/extensions_update
+     *
+     * */
+    public function checkStructure()
+    {
+        erLhcoreClassUpdate::doTablesUpdate(json_decode(file_get_contents('extension/twilio/doc/structure.json'), true));
+    }
+
+    /**
+     * Used only in automated hosting enviroment
+     */
+    public function instanceCreated($params)
+    {
+        try {
+            // Just do table updates
+            erLhcoreClassUpdate::doTablesUpdate(json_decode(file_get_contents('extension/twilio/doc/structure.json'), true));
+        } catch (Exception $e) {
+            erLhcoreClassLog::write(print_r($e, true));
+        }
     }
 
     public function chatsFilter($params) {
@@ -615,8 +729,6 @@ class erLhcoreClassExtensionTwilio
 
         return $response;
     }
-
-
 
     /*
      *

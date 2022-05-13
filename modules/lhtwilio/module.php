@@ -22,6 +22,12 @@ $ViewList['list'] = array(
     'functions' => array('use_admin'),
 );
 
+$ViewList['notification'] = array(
+    'params' => array(),
+    'uparams' => array(),
+    'functions' => array('use_admin'),
+);
+
 $ViewList['new'] = array(
     'params' => array(),
     'uparams' => array(),

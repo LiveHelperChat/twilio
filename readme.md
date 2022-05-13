@@ -4,7 +4,7 @@
 ```
 php cron.php -s site_admin -e twilio -c cron/update_structure
 ```
-or 
+or
 `https://github.com/LiveHelperChat/twilio/blob/master/doc/install.sql`
 
 4. Enable extension in `settings/settings.ini.php`
