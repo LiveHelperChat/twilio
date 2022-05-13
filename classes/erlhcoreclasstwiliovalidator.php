@@ -5,6 +5,9 @@ class erLhcoreClassTwilioValidator
     public static function validatePhone(erLhcoreClassModelTwilioPhone & $item)
     {
             $definition = array(
+                'ah_provided' => new ezcInputFormDefinitionElement(
+                    ezcInputFormDefinitionElement::OPTIONAL, 'boolean'
+                ),
                 'phone' => new ezcInputFormDefinitionElement(
                     ezcInputFormDefinitionElement::OPTIONAL, 'unsafe_raw'
                 ),
@@ -41,27 +44,35 @@ class erLhcoreClassTwilioValidator
                 $Errors[] =  erTranslationClassLhTranslation::getInstance()->getTranslation('xmppservice/operatorvalidator','Please enter phone number!');
             }
 
-            if ( $form->hasValidData( 'base_phone' ) && $form->base_phone != '')
+            if ( $form->hasValidData( 'base_phone' ) && $form->base_phone != '' )
             {
                 $item->base_phone = $form->base_phone;
             } else {
                 $item->base_phone = '';
             }
-            
-            if ( $form->hasValidData( 'account_sid' ) && $form->account_sid != '')
-            {
-                $item->account_sid = $form->account_sid;
+
+            if ( $form->hasValidData( 'ah_provided' ) && $form->ah_provided == true ) {
+                $item->ah_provided = 1;
             } else {
-                $Errors[] =  erTranslationClassLhTranslation::getInstance()->getTranslation('xmppservice/operatorvalidator','Please enter Account SID!');
+                $item->ah_provided = 0;
             }
 
-            if ( $form->hasValidData( 'auth_token' ) && $form->auth_token != '')
-            {
+            if ( $form->hasValidData( 'account_sid' ) && $form->account_sid != '') {
+                $item->account_sid = $form->account_sid;
+            } else {
+                if ($item->ah_provided == 0) {
+                    $Errors[] =  erTranslationClassLhTranslation::getInstance()->getTranslation('xmppservice/operatorvalidator','Please enter Account SID!');
+                }
+            }
+
+            if ( $form->hasValidData( 'auth_token' ) && $form->auth_token != '') {
                 $item->auth_token = $form->auth_token;
             } else {
-                $Errors[] =  erTranslationClassLhTranslation::getInstance()->getTranslation('xmppservice/operatorvalidator','Please enter Auth Token!');
+                if ($item->ah_provided == 0) {
+                    $Errors[] =  erTranslationClassLhTranslation::getInstance()->getTranslation('xmppservice/operatorvalidator','Please enter Auth Token!');
+                }
             }
-            
+
             if ( $form->hasValidData( 'originator' ) && $form->originator != '')
             {
                 $item->originator = $form->originator;

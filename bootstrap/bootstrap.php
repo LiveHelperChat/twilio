@@ -5,7 +5,7 @@ class erLhcoreClassExtensionTwilio
     public function __construct()
     {}
 
-    private $settings = array();
+    public $settings = array();
 
     private $ahinstance = null;
 
@@ -432,6 +432,18 @@ class erLhcoreClassExtensionTwilio
             'recipient' => $recipientPhone
         );
 
+        if ($tPhone->ah_provided == 1) {
+
+            if ($this->settings['auth_token'] != '') {
+                $paramsSend['AuthTokenSend'] = $this->settings['auth_token'];
+            }
+
+            if ($this->settings['account_sid'] != '') {
+                $paramsSend['AccountSidSend'] = $this->settings['account_sid'];
+            }
+
+        }
+
         $client = new Services_Twilio($paramsSend['AccountSidSend'], $paramsSend['AuthTokenSend']);
 
         $paramsMMS = array(
@@ -440,7 +452,7 @@ class erLhcoreClassExtensionTwilio
             'Body' => $paramsSend['text']
         );
 
-        // Attatch MMS if required
+        // Attach MMS if required
         $this->addMMSAttatchements($paramsMMS);
 
         $client->account->messages->create($paramsMMS);
@@ -596,8 +608,15 @@ class erLhcoreClassExtensionTwilio
                         $paramsSend['originator'] = $this->ahinstance->phone_number_first;
                     }
 
-                    $paramsSend['name'] = $this->ahinstance->getPhoneAttribute('AccountSidSend');
-                    $paramsSend['password'] = $this->ahinstance->getPhoneAttribute('AuthTokenSend');
+                    if ($twilioPhone->ah_provided == 1) {
+                        if ($this->settings['auth_token'] != '') {
+                            $paramsSend['AuthTokenSend'] = $this->settings['auth_token'];
+                        }
+
+                        if ($this->settings['account_sid'] != '') {
+                            $paramsSend['AccountSidSend'] = $this->settings['account_sid'];
+                        }
+                    }
                 }
 
                 $client = new Services_Twilio($paramsSend['AccountSidSend'], $paramsSend['AuthTokenSend']);
@@ -763,11 +782,22 @@ class erLhcoreClassExtensionTwilio
             }
         }
 
-        if (($this->settings['ahenviroment'] == false && $twilioPhone === false) || ($this->settings['ahenviroment'] == true && ! key_exists($params['To'], $this->ahinstance->phone_number_departments))) {
+        $valid = false;
+        $validSID = false;
+
+        if ($twilioPhone !== false && $this->settings['ahenviroment'] == true && $twilioPhone->ah_provided == 1) {
+            $valid = true;
+            if ($twilioPhone !== false && $params['AccountSid'] == $this->settings['account_sid']) {
+                $validSID = true;
+                echo "asd";
+             }
+        }
+
+        if ($valid == false && (($this->settings['ahenviroment'] == false && $twilioPhone === false) || ($this->settings['ahenviroment'] == true && ! key_exists($params['To'], $this->ahinstance->phone_number_departments)))) {
             throw new Exception('Invalid recipient');
         }
 
-        if (($this->settings['ahenviroment'] == false && $twilioPhone->account_sid != $params['AccountSid']) || ($this->settings['ahenviroment'] == true && $this->ahinstance->getPhoneAttribute('AccountSid') != $params['AccountSid'])) {
+        if ($validSID == false && (($this->settings['ahenviroment'] == false && $twilioPhone->account_sid != $params['AccountSid']) || ($this->settings['ahenviroment'] == true && $this->ahinstance->getPhoneAttribute('AccountSid') != $params['AccountSid']))) {
             throw new Exception('Invalid AccountSid');
         }
 
@@ -947,7 +977,7 @@ class erLhcoreClassExtensionTwilio
 
             if ($chat->dep_id == 0) {
 
-                if ($this->settings['ahenviroment'] == false && $twilioPhone->dep_id > 0) {
+                if ($twilioPhone->dep_id > 0) {
 
                     $depId = $twilioPhone->dep_id;
                     $department = erLhcoreClassModelDepartament::fetch($depId);

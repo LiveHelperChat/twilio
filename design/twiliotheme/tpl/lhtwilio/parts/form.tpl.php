@@ -8,14 +8,19 @@
     <input type="text" maxlength="25" class="form-control" placeholder="E.g +1" name="base_phone" value="<?php echo htmlspecialchars($item->base_phone)?>" />
 </div>
 
-<div class="form-group">
-    <label><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('module/fbmessenger','Account SID');?>*</label>
-    <input type="text" maxlength="35" class="form-control" name="account_sid" value="<?php echo htmlspecialchars($item->account_sid)?>" />
-</div>
+<?php if (erLhcoreClassModule::getExtensionInstance('erLhcoreClassExtensionTwilio')->settings['ahenviroment'] == true) : ?>
+<label><input type="checkbox" onchange="$('#auth-required').toggle('hide')" <?php if ($item->ah_provided == 1) : ?>checked="checked"<?php endif;?> name="ah_provided" value="on"> <?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('module/fbmessenger','Provided by service provider');?></label>
+<?php endif; ?>
 
-<div class="form-group">
-    <label><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('module/fbmessenger','Auth Token');?>*</label>
-    <input type="text" maxlength="35" class="form-control" name="auth_token" value="<?php echo htmlspecialchars($item->auth_token)?>" />
+<div id="auth-required" style="display: <?php $item->ah_provided == 1 ? print 'none' : print 'block'?>">
+    <div class="form-group">
+        <label><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('module/fbmessenger','Account SID');?>*</label>
+        <input type="text" maxlength="35" class="form-control" name="account_sid" value="<?php echo htmlspecialchars($item->account_sid)?>" />
+    </div>
+    <div class="form-group">
+        <label><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('module/fbmessenger','Auth Token');?>*</label>
+        <input type="text" maxlength="35" class="form-control" name="auth_token" value="<?php echo htmlspecialchars($item->auth_token)?>" />
+    </div>
 </div>
 
 <div class="form-group">

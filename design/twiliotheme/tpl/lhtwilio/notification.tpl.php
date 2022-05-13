@@ -8,7 +8,7 @@
     <?php include(erLhcoreClassDesign::designtpl('lhkernel/alert_success.tpl.php'));?>
 <?php endif; ?>
 
-<form action="" method="post" ng-non-bindable>
+<form action="" method="post" class="mb-2" ng-non-bindable>
 
     <div class="form-group">
         <label><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('module/osticket','Notification Message');?></label>
@@ -17,7 +17,7 @@
     </div>
 
     <div class="btn-group" role="group" aria-label="...">
-        <input type="submit" name="Update" class="btn btn-primary" value="<?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('module/osticket','Save');?>">
+        <input type="submit" name="Update" class="btn btn-sm btn-primary" value="<?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('module/osticket','Save');?>">
     </div>
 
 </form>

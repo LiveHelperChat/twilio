@@ -12,7 +12,7 @@
     <a title="<?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('sugarcrm/module', 'Open in a new window'); ?>" ng-click="lhc.startChatNewWindow(<?php echo $chat->id?>,'<?php echo erLhcoreClassDesign::shrt($chat->nick,10,'...',30,ENT_QUOTES);?>')"><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('twilio/module','Open chat')?></a>
 <?php endif; ?>
 
-<form action="" method="post" ng-non-bindable>
+<form action="" method="post" class="mb-2" ng-non-bindable>
 
     <div class="form-group">
     	<label><?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('twilio/module','Phone number')?></label> 
@@ -51,6 +51,6 @@
 		<label><input type="checkbox" name="TwilioCreateChat" value="on" <?php ($input->create_chat == true) ? print 'checked="checked"' : print '';?>>&nbsp;<?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('sugarcrm/module','Create chat')?></label>
 	</div>
     
-    <input type="submit" name="Update" class="btn btn-primary" value="<?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('twilio/module','Send')?>">
+    <input type="submit" name="Update" class="btn btn-sm btn-primary" value="<?php echo erTranslationClassLhTranslation::getInstance()->getTranslation('twilio/module','Send')?>">
     
 </form>

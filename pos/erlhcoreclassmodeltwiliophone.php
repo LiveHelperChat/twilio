@@ -49,6 +49,11 @@ $def->properties['originator']->columnName   = 'originator';
 $def->properties['originator']->propertyName = 'originator';
 $def->properties['originator']->propertyType = ezcPersistentObjectProperty::PHP_TYPE_STRING;
 
+$def->properties['ah_provided'] = new ezcPersistentObjectProperty();
+$def->properties['ah_provided']->columnName   = 'ah_provided';
+$def->properties['ah_provided']->propertyName = 'ah_provided';
+$def->properties['ah_provided']->propertyType = ezcPersistentObjectProperty::PHP_TYPE_INT;
+
 return $def;
 
 ?>
