@@ -724,6 +724,8 @@ class erLhcoreClassExtensionTwilio
                             'image/png' => 'png',
                             'image/jpeg' => 'jpg',
                             'application/pdf' => 'pdf',
+                            'audio/ogg' => 'ogg',
+                            'video/mp4' => 'mp4',
                         );
 
                         $fileUpload = new erLhcoreClassModelChatFile();
