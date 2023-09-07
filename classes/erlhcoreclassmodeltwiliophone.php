@@ -1,5 +1,5 @@
 <?php
-
+#[\AllowDynamicProperties]
 class erLhcoreClassModelTwilioPhone
 {
 	use erLhcoreClassDBTrait;

@@ -1,5 +1,5 @@
 <?php
-
+#[\AllowDynamicProperties]
 class erLhcoreClassTwilioValidator
 {
     public static function validatePhone(erLhcoreClassModelTwilioPhone & $item)
