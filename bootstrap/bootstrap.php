@@ -17,7 +17,7 @@ class erLhcoreClassExtensionTwilio
 
         $this->settings = include ('extension/twilio/settings/settings.ini.php');
 
-        require 'extension/twilio/vendor/twilio-php-master/Services/Twilio.php';
+        require 'extension/twilio/vendor/autoload.php';
 
         if ($this->settings['ahenviroment'] == true) {
             $this->ahinstance = erLhcoreClassInstance::getInstance();
@@ -449,10 +449,9 @@ class erLhcoreClassExtensionTwilio
 
         }
 
-        $client = new Services_Twilio($paramsSend['AccountSidSend'], $paramsSend['AuthTokenSend']);
+        $client = new Twilio\Rest\Client($paramsSend['AccountSidSend'], $paramsSend['AuthTokenSend']);
 
         $paramsMMS = array(
-            'To' => $paramsSend['recipient'],
             'From' => $paramsSend['originator'],
             'Body' => $paramsSend['text']
         );
@@ -460,7 +459,10 @@ class erLhcoreClassExtensionTwilio
         // Attach MMS if required
         $this->addMMSAttatchements($paramsMMS);
 
-        $client->account->messages->create($paramsMMS);
+        $client->messages->create(
+            $paramsSend['recipient'],
+            $paramsMMS
+        );
 
         if ($params['create_chat'] == true) {
 
@@ -624,7 +626,7 @@ class erLhcoreClassExtensionTwilio
                     }
                 }
 
-                $client = new Services_Twilio($paramsSend['AccountSidSend'], $paramsSend['AuthTokenSend']);
+                $client = new Twilio\Rest\Client($paramsSend['AccountSidSend'], $paramsSend['AuthTokenSend']);
 
                 $paramsMMS = array(
                     'To' => $paramsSend['recipient'],
@@ -635,7 +637,10 @@ class erLhcoreClassExtensionTwilio
                 // Attach MMS if required
                 $this->addMMSAttatchements($paramsMMS);
 
-                $client->account->messages->create($paramsMMS);
+                $client->messages->create(
+                    $paramsSend['recipient'],
+                    $paramsMMS
+                );
 
                 if (! isset($chatVariables['twilio_sms_chat_send'])) {
                     $chatVariables['twilio_sms_chat_send'] = 0;
